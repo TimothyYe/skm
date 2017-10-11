@@ -9,6 +9,11 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.tar.gz
+*.zip
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+skm
+.DS_Store
+.env
