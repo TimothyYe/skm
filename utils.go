@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -46,4 +48,76 @@ func createLink(alias string) {
 	os.Symlink(filepath.Join(storePath, alias, private), filepath.Join(sshPath, private))
 	//Create symlink for public key
 	os.Symlink(filepath.Join(storePath, alias, public), filepath.Join(sshPath, public))
+}
+
+func loadSingleKey(keyPath string) *SSHKey {
+	key := &SSHKey{}
+
+	//Walkthrough SSH key store and load all the keys
+	err := filepath.Walk(keyPath, func(path string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+
+		if path == keyPath {
+			return nil
+		}
+
+		if f.IsDir() {
+			return nil
+		}
+
+		if strings.Contains(f.Name(), ".pub") {
+			key.PublicKey = f.Name()
+			return nil
+		} else {
+			key.PrivateKey = f.Name()
+			return nil
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		fmt.Printf("filepath.Walk() returned %v\n", err)
+		return nil
+	}
+
+	if key.PublicKey != "" && key.PrivateKey != "" {
+		return key
+	}
+
+	return nil
+}
+
+func loadSSHKeys() map[string]*SSHKey {
+	keys := map[string]*SSHKey{}
+
+	//Walkthrough SSH key store and load all the keys
+	err := filepath.Walk(storePath, func(path string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+
+		if path == storePath {
+			return nil
+		}
+
+		if f.IsDir() {
+			//Load private/public keys
+			key := loadSingleKey(path)
+
+			if key != nil {
+				keys[f.Name()] = key
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		fmt.Printf("filepath.Walk() returned %v\n", err)
+	}
+
+	return keys
 }

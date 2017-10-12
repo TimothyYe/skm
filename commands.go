@@ -16,9 +16,7 @@ func initCommands() []cli.Command {
 			Name:    "create",
 			Aliases: []string{"c"},
 			Usage:   "Create a new SSH key.",
-			Action: func(c *cli.Context) error {
-				return nil
-			},
+			Action:  list,
 		},
 		{
 			Name:    "ls",
