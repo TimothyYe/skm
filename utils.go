@@ -1,6 +1,11 @@
 package main
 
-import "os"
+import (
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+)
 
 const (
 	Name  = "SKM"
@@ -8,6 +13,11 @@ const (
 
 	CheckSymbol = "\u2714 "
 	CrossSymbol = "\u2716 "
+)
+
+var (
+	storePath = filepath.Join(os.Getenv("HOME"), ".skm")
+	sshPath   = filepath.Join(os.Getenv("HOME"), ".ssh")
 )
 
 func parseArgs() {
@@ -18,4 +28,22 @@ func parseArgs() {
 			displayLogo()
 		}
 	}
+}
+
+func execute(script string, args ...string) {
+	cmd := exec.Command(script, args...)
+
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func createLink(alias string) {
+	public := "id_rsa.pub"
+	private := "id_rsa"
+
+	//Create symlink for private key
+	os.Symlink(filepath.Join(storePath, alias, private), filepath.Join(sshPath, private))
+	//Create symlink for public key
+	os.Symlink(filepath.Join(storePath, alias, public), filepath.Join(sshPath, public))
 }
