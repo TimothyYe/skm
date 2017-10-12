@@ -1,12 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"os"
 
-var (
-	Version = "0.1.0"
+	cli "gopkg.in/urfave/cli.v1"
 )
 
 func main() {
-	fmt.Println("Let's start from here...")
-	fmt.Println("current version:", Version)
+	parseArgs()
+
+	app := cli.NewApp()
+	app.Name = Name
+	app.Usage = Usage
+	app.Version = Version
+	app.Commands = initCommands()
+	app.Run(os.Args)
 }
