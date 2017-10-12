@@ -16,7 +16,11 @@ func initCommands() []cli.Command {
 			Name:    "create",
 			Aliases: []string{"c"},
 			Usage:   "Create a new SSH key.",
-			Action:  list,
+			Action:  create,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "b", Usage: "bits"},
+				cli.StringFlag{Name: "C", Usage: "comment"},
+			},
 		},
 		{
 			Name:    "ls",

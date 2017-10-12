@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/fatih/color"
@@ -21,6 +22,13 @@ func initialize(c *cli.Context) error {
 	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
 		color.Green("%sSSH key store already exists.", checkSymbol)
 	}
+
+	return nil
+}
+
+func create(c *cli.Context) error {
+	fmt.Println(c.Args())
+	fmt.Println(c.FlagNames())
 
 	return nil
 }
