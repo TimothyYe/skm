@@ -13,8 +13,11 @@ const (
 	Name  = "SKM"
 	Usage = "Manage your multiple SSH keys easily"
 
-	CheckSymbol = "\u2714 "
-	CrossSymbol = "\u2716 "
+	checkSymbol = "\u2714 "
+	crossSymbol = "\u2716 "
+
+	publicKey  = "id_rsa.pub"
+	privateKey = "id_rsa"
 )
 
 var (
@@ -41,13 +44,11 @@ func execute(script string, args ...string) {
 }
 
 func createLink(alias string) {
-	public := "id_rsa.pub"
-	private := "id_rsa"
 
 	//Create symlink for private key
-	os.Symlink(filepath.Join(storePath, alias, private), filepath.Join(sshPath, private))
+	os.Symlink(filepath.Join(storePath, alias, privateKey), filepath.Join(sshPath, privateKey))
 	//Create symlink for public key
-	os.Symlink(filepath.Join(storePath, alias, public), filepath.Join(sshPath, public))
+	os.Symlink(filepath.Join(storePath, alias, publicKey), filepath.Join(sshPath, publicKey))
 }
 
 func loadSingleKey(keyPath string) *SSHKey {

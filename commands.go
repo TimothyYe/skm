@@ -22,9 +22,7 @@ func initCommands() []cli.Command {
 			Name:    "ls",
 			Aliases: []string{"l"},
 			Usage:   "List all the available SSH keys",
-			Action: func(c *cli.Context) error {
-				return nil
-			},
+			Action:  list,
 		},
 		{
 			Name:    "use",
