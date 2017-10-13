@@ -19,6 +19,7 @@ const (
 
 	publicKey  = "id_rsa.pub"
 	privateKey = "id_rsa"
+	defaultKey = "default"
 )
 
 var (
