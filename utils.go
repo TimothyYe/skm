@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 const (
@@ -38,8 +39,12 @@ func parseArgs() {
 func execute(script string, args ...string) {
 	cmd := exec.Command(script, args...)
 
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		color.Red("%s%s", crossSymbol, err.Error())
 	}
 }
 
