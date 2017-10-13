@@ -13,8 +13,8 @@ func initialize(c *cli.Context) error {
 	if _, err := os.Stat(storePath); os.IsNotExist(err) {
 		err := os.Mkdir(storePath, 0755)
 
-		if err == nil {
-			color.Green("%sSSH key store initialized!", checkSymbol)
+		if err != nil {
+			color.Red("%sFailed to initialize SSH key store!", checkSymbol)
 			return nil
 		}
 	}
@@ -36,8 +36,11 @@ func initialize(c *cli.Context) error {
 		//Move key to default key store
 		os.Rename(filepath.Join(sshPath, privateKey), filepath.Join(storePath, defaultKey, privateKey))
 		os.Rename(filepath.Join(sshPath, publicKey), filepath.Join(storePath, defaultKey, publicKey))
+
+		//Create symbol link
 	}
 
+	color.Green("%sSSH key store initialized!", checkSymbol)
 	return nil
 }
 
