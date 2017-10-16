@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -37,8 +38,12 @@ func parseArgs() {
 	}
 }
 
-func execute(script string, args ...string) {
+func execute(workDir, script string, args ...string) bool {
 	cmd := exec.Command(script, args...)
+
+	if workDir != "" {
+		cmd.Dir = workDir
+	}
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -46,7 +51,10 @@ func execute(script string, args ...string) {
 
 	if err := cmd.Run(); err != nil {
 		color.Red("%s%s", crossSymbol, err.Error())
+		return false
 	}
+
+	return true
 }
 
 func clearKey() {
@@ -194,4 +202,8 @@ func loadSSHKeys() map[string]*SSHKey {
 	}
 
 	return keys
+}
+
+func getBakFileName() string {
+	return fmt.Sprintf("skm-%s.tar", time.Now().Format("20060102150405"))
 }

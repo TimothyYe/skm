@@ -91,7 +91,7 @@ func create(c *cli.Context) error {
 	args = append(args, "-f")
 	args = append(args, filepath.Join(storePath, alias, "id_rsa"))
 
-	execute("ssh-keygen", args...)
+	execute("", "ssh-keygen", args...)
 	color.Green("%sSSH key [%s] created!", checkSymbol, alias)
 	return nil
 }
@@ -167,5 +167,17 @@ func delete(c *cli.Context) error {
 
 	//Set key with related alias as default used key
 	deleteKey(alias, key)
+	return nil
+}
+
+func backup(c *cli.Context) error {
+	fileName := getBakFileName()
+	dstFile := filepath.Join(os.Getenv("HOME"), fileName)
+
+	result := execute(storePath, "tar", "-czvf", dstFile, ".")
+	if result {
+		color.Green("%s All SSH keys backup to: %s", checkSymbol, dstFile)
+	}
+
 	return nil
 }

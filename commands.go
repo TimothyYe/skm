@@ -44,9 +44,7 @@ func initCommands() []cli.Command {
 			Name:    "backup",
 			Aliases: []string{"b"},
 			Usage:   "Backup all SSH keys to an archive file",
-			Action: func(c *cli.Context) error {
-				return nil
-			},
+			Action:  backup,
 		},
 		{
 			Name:    "restore",
