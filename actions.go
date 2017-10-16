@@ -91,8 +91,12 @@ func list(c *cli.Context) error {
 		return nil
 	}
 
-	for k, _ := range keyMap {
-		color.Blue("\t%s", k)
+	for k, v := range keyMap {
+		if v.IsDefault {
+			color.Green("->\t%s", k)
+		} else {
+			color.Blue("\t%s", k)
+		}
 	}
 
 	return nil

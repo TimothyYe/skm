@@ -87,10 +87,16 @@ func loadSingleKey(keyPath string) *SSHKey {
 		}
 
 		if strings.Contains(f.Name(), ".pub") {
-			key.PublicKey = f.Name()
+			key.PublicKey = path
 			return nil
 		} else {
-			key.PrivateKey = f.Name()
+			//Check if key is in use
+			key.PrivateKey = path
+
+			if path == parsePath(filepath.Join(sshPath, privateKey)) {
+				key.IsDefault = true
+			}
+
 			return nil
 		}
 
@@ -107,6 +113,27 @@ func loadSingleKey(keyPath string) *SSHKey {
 	}
 
 	return nil
+}
+
+func parsePath(path string) string {
+	fileInfo, err := os.Lstat(path)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if fileInfo.Mode()&os.ModeSymlink != 0 {
+		originFile, err := os.Readlink(path)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		return originFile
+	}
+	return path
 }
 
 func loadSSHKeys() map[string]*SSHKey {
