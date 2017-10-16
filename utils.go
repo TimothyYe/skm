@@ -49,7 +49,7 @@ func execute(script string, args ...string) {
 	}
 }
 
-func createLink(alias string) {
+func clearKey() {
 	//Remove private key if exists
 	privateKeyPath := filepath.Join(sshPath, privateKey)
 	if _, err := os.Stat(privateKeyPath); !os.IsNotExist(err) {
@@ -61,6 +61,36 @@ func createLink(alias string) {
 	if _, err := os.Stat(publicKeyPath); !os.IsNotExist(err) {
 		os.Remove(publicKeyPath)
 	}
+}
+
+func deleteKey(alias string, key *SSHKey) {
+	inUse := key.PrivateKey == parsePath(filepath.Join(sshPath, privateKey))
+
+	if inUse {
+		fmt.Print(color.BlueString("SSH key [%s] is currently in use, please confirm to delete it [y/n]: ", alias))
+	} else {
+		fmt.Print(color.BlueString("Please confirm to delete SSH key [%s] [y/n]: ", alias))
+	}
+	var input string
+	fmt.Scan(&input)
+
+	if input == "y" {
+
+		if inUse {
+			clearKey()
+		}
+
+		//Remove specified key by alias name
+		if err := os.RemoveAll(filepath.Join(storePath, alias)); err == nil {
+			color.Green("%sSSH key [%s] deleted!", checkSymbol, alias)
+		} else {
+			color.Red("%sFailed to delete SSH key [%s]!", crossSymbol, alias)
+		}
+	}
+}
+
+func createLink(alias string) {
+	clearKey()
 
 	//Create symlink for private key
 	os.Symlink(filepath.Join(storePath, alias, privateKey), filepath.Join(sshPath, privateKey))
@@ -118,8 +148,7 @@ func parsePath(path string) string {
 	fileInfo, err := os.Lstat(path)
 
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return ""
 	}
 
 	if fileInfo.Mode()&os.ModeSymlink != 0 {

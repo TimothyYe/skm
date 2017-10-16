@@ -42,6 +42,7 @@ func initialize(c *cli.Context) error {
 	}
 
 	color.Green("%sSSH key store initialized!", checkSymbol)
+	color.Green("Key store location is: %s", storePath)
 	return nil
 }
 
@@ -54,6 +55,16 @@ func create(c *cli.Context) error {
 	} else {
 		color.Red("%sPlease input key alias name!")
 		return nil
+	}
+
+	//Check alias name existance
+	keyMap := loadSSHKeys()
+
+	if len(keyMap) > 0 {
+		if _, ok := keyMap[alias]; ok {
+			color.Red("%sSSH key alias already exists, please choose another one!", crossSymbol)
+			return nil
+		}
 	}
 
 	//Create alias directory
@@ -80,6 +91,7 @@ func create(c *cli.Context) error {
 	args = append(args, filepath.Join(storePath, alias, "id_rsa"))
 
 	execute("ssh-keygen", args...)
+	color.Green("%sSSH key [%s] created!", checkSymbol, alias)
 	return nil
 }
 
@@ -91,6 +103,7 @@ func list(c *cli.Context) error {
 		return nil
 	}
 
+	color.Green("%sFound %d SSH key(s)!", checkSymbol, len(keyMap))
 	for k, v := range keyMap {
 		if v.IsDefault {
 			color.Green("->\t%s", k)
@@ -121,6 +134,28 @@ func use(c *cli.Context) error {
 
 	//Set key with related alias as default used key
 	createLink(alias)
+	color.Green("Now using SSH key: %s", alias)
+	return nil
+}
 
+func delete(c *cli.Context) error {
+	var alias string
+
+	if c.NArg() > 0 {
+		alias = c.Args().Get(0)
+	} else {
+		color.Red("%sPlease input key alias name!")
+		return nil
+	}
+
+	keyMap := loadSSHKeys()
+	key, ok := keyMap[alias]
+
+	if !ok {
+		color.Red("Key alias: %s doesn't exist!", alias)
+	}
+
+	//Set key with related alias as default used key
+	deleteKey(alias, key)
 	return nil
 }

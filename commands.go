@@ -38,9 +38,7 @@ func initCommands() []cli.Command {
 			Name:    "delete",
 			Aliases: []string{"d"},
 			Usage:   "Delete specific SSH key by alias name",
-			Action: func(c *cli.Context) error {
-				return nil
-			},
+			Action:  delete,
 		},
 		{
 			Name:    "backup",
