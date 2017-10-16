@@ -203,5 +203,5 @@ func loadSSHKeys() map[string]*SSHKey {
 }
 
 func getBakFileName() string {
-	return fmt.Sprintf("skm-%s.tar", time.Now().Format("20060102150405"))
+	return fmt.Sprintf("skm-%s.tar.gz", time.Now().Format("20060102150405"))
 }
