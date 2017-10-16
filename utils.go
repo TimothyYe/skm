@@ -51,6 +51,18 @@ func execute(script string, args ...string) {
 
 func createLink(alias string) {
 
+	//Remove private key if exists
+	privateKeyPath := filepath.Join(sshPath, privateKey)
+	if _, err := os.Stat(privateKeyPath); !os.IsNotExist(err) {
+		os.Remove(privateKeyPath)
+	}
+
+	//Remove public key if exists
+	publicKeyPath := filepath.Join(sshPath, publicKey)
+	if _, err := os.Stat(publicKeyPath); !os.IsNotExist(err) {
+		os.Remove(publicKeyPath)
+	}
+
 	//Create symlink for private key
 	os.Symlink(filepath.Join(storePath, alias, privateKey), filepath.Join(sshPath, privateKey))
 	//Create symlink for public key

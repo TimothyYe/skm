@@ -10,6 +10,11 @@ import (
 
 func initialize(c *cli.Context) error {
 	//Check the existence of key store
+	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
+		color.Green("%sSSH key store already exists.", checkSymbol)
+		return nil
+	}
+
 	if _, err := os.Stat(storePath); os.IsNotExist(err) {
 		err := os.Mkdir(storePath, 0755)
 
@@ -17,11 +22,6 @@ func initialize(c *cli.Context) error {
 			color.Red("%sFailed to initialize SSH key store!", checkSymbol)
 			return nil
 		}
-	}
-
-	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
-		color.Green("%sSSH key store already exists.", checkSymbol)
-		return nil
 	}
 
 	//Check & move existing keys into default folder
@@ -38,6 +38,7 @@ func initialize(c *cli.Context) error {
 		os.Rename(filepath.Join(sshPath, publicKey), filepath.Join(storePath, defaultKey, publicKey))
 
 		//Create symbol link
+		createLink(defaultKey)
 	}
 
 	color.Green("%sSSH key store initialized!", checkSymbol)
