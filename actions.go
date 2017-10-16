@@ -194,8 +194,6 @@ func restore(c *cli.Context) error {
 		return nil
 	}
 
-	fmt.Println("filePath:", filePath)
-
 	//Clear the key store first
 	err := os.RemoveAll(storePath)
 
