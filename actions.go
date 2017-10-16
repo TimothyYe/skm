@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/fatih/color"
 	cli "gopkg.in/urfave/cli.v1"
@@ -104,8 +105,17 @@ func list(c *cli.Context) error {
 	}
 
 	color.Green("%sFound %d SSH key(s)!", checkSymbol, len(keyMap))
-	for k, v := range keyMap {
-		if v.IsDefault {
+
+	var keys []string
+	for k := range keyMap {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		key := keyMap[k]
+		if key.IsDefault {
 			color.Green("->\t%s", k)
 		} else {
 			color.Blue("\t%s", k)
