@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	//Version of SKM
 	Version = "0.1"
 	logo    = `
 ███████╗██╗  ██╗███╗   ███╗

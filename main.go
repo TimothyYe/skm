@@ -10,8 +10,8 @@ func main() {
 	parseArgs()
 
 	app := cli.NewApp()
-	app.Name = Name
-	app.Usage = Usage
+	app.Name = name
+	app.Usage = usage
 	app.Version = Version
 	app.Commands = initCommands()
 	app.Run(os.Args)

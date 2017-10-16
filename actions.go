@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -58,7 +59,7 @@ func create(c *cli.Context) error {
 		return nil
 	}
 
-	//Check alias name existance
+	//Check alias name existence
 	keyMap := loadSSHKeys()
 
 	if len(keyMap) > 0 {
@@ -104,7 +105,8 @@ func list(c *cli.Context) error {
 		return nil
 	}
 
-	color.Green("%sFound %d SSH key(s)!", checkSymbol, len(keyMap))
+	color.Green("\r\n%sFound %d SSH key(s)!", checkSymbol, len(keyMap))
+	fmt.Println()
 
 	var keys []string
 	for k := range keyMap {

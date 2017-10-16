@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	Name  = "SKM"
-	Usage = "Manage your multiple SSH keys easily"
+	name  = "SKM"
+	usage = "Manage your multiple SSH keys easily"
 
 	checkSymbol = "\u2714 "
 	crossSymbol = "\u2716 "
@@ -126,15 +126,13 @@ func loadSingleKey(keyPath string) *SSHKey {
 		if strings.Contains(f.Name(), ".pub") {
 			key.PublicKey = path
 			return nil
-		} else {
-			//Check if key is in use
-			key.PrivateKey = path
+		}
 
-			if path == parsePath(filepath.Join(sshPath, privateKey)) {
-				key.IsDefault = true
-			}
+		//Check if key is in use
+		key.PrivateKey = path
 
-			return nil
+		if path == parsePath(filepath.Join(sshPath, privateKey)) {
+			key.IsDefault = true
 		}
 
 		return nil
