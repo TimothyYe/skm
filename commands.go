@@ -32,9 +32,7 @@ func initCommands() []cli.Command {
 			Name:    "use",
 			Aliases: []string{"u"},
 			Usage:   "Set specific SSH key as default by its alias name",
-			Action: func(c *cli.Context) error {
-				return nil
-			},
+			Action:  use,
 		},
 		{
 			Name:    "delete",

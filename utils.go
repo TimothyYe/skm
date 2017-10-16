@@ -50,7 +50,6 @@ func execute(script string, args ...string) {
 }
 
 func createLink(alias string) {
-
 	//Remove private key if exists
 	privateKeyPath := filepath.Join(sshPath, privateKey)
 	if _, err := os.Stat(privateKeyPath); !os.IsNotExist(err) {

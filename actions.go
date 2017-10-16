@@ -101,3 +101,26 @@ func list(c *cli.Context) error {
 
 	return nil
 }
+
+func use(c *cli.Context) error {
+	var alias string
+
+	if c.NArg() > 0 {
+		alias = c.Args().Get(0)
+	} else {
+		color.Red("%sPlease input key alias name!")
+		return nil
+	}
+
+	keyMap := loadSSHKeys()
+	_, ok := keyMap[alias]
+
+	if !ok {
+		color.Red("Key alias: %s doesn't exist!", alias)
+	}
+
+	//Set key with related alias as default used key
+	createLink(alias)
+
+	return nil
+}
