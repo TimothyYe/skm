@@ -183,3 +183,43 @@ func backup(c *cli.Context) error {
 
 	return nil
 }
+
+func restore(c *cli.Context) error {
+	var filePath string
+
+	if c.NArg() > 0 {
+		filePath = c.Args().Get(0)
+	} else {
+		color.Red("%sPlease input the corrent backup file path!")
+		return nil
+	}
+
+	fmt.Println("filePath:", filePath)
+
+	//Clear the key store first
+	err := os.RemoveAll(storePath)
+
+	if err != nil {
+		fmt.Println("Clear store path failed:", err.Error())
+	}
+
+	//Clear all keys
+	clearKey()
+
+	err = os.Mkdir(storePath, 0755)
+
+	if err != nil {
+		color.Red("%sFailed to initialize SSH key store!", checkSymbol)
+		return nil
+	}
+
+	//Extract backup file
+	result := execute(storePath, "tar", "zxvf", filePath, "-C", storePath)
+
+	if result {
+		fmt.Println()
+		color.Green("%s All SSH keys restored to %s", checkSymbol, storePath)
+	}
+
+	return nil
+}

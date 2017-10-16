@@ -50,9 +50,7 @@ func initCommands() []cli.Command {
 			Name:    "restore",
 			Aliases: []string{"r"},
 			Usage:   "Restore SSH keys from an existing archive file",
-			Action: func(c *cli.Context) error {
-				return nil
-			},
+			Action:  restore,
 		},
 	}
 }
