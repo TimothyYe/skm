@@ -9,7 +9,7 @@ func initCommands() []cli.Command {
 		{
 			Name:    "init",
 			Aliases: []string{"i"},
-			Usage:   "Initialize SSH keys store for the first time usage.",
+			Usage:   "Initialize SSH keys store for the first time use",
 			Action:  initialize,
 		},
 		{
