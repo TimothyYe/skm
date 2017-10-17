@@ -142,6 +142,7 @@ func use(c *cli.Context) error {
 
 	if !ok {
 		color.Red("Key alias: %s doesn't exist!", alias)
+		return nil
 	}
 
 	//Set key with related alias as default used key
