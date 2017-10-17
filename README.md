@@ -112,7 +112,11 @@ Your public key has been saved in /Users/timothy/.skm/prod/id_rsa.pub.
         dev
         prod
 ```
-
+### Set default SSH key
+```bash
+% skm use dev
+Now using SSH key: dev
+```
 ### Delete a SSH key
 
 ```bash
