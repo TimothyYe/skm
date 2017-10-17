@@ -11,7 +11,7 @@
 [7]: https://goreportcard.com/badge/github.com/timothyye/skm
 [8]: https://goreportcard.com/report/github.com/timothyye/skm
 
-SKM is a simple and powerful SSH Key Manager. It helps you to manage your multiple SSH keys easily!
+SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multiple SSH keys easily!
 
 ![](https://github.com/TimothyYe/skm/blob/master/snapshots/demo.gif?raw=true)
 
