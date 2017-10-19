@@ -128,6 +128,8 @@ Please confirm to delete SSH key [prod] [y/n]: y
 
 ### Backup SSH keys
 
+Backup all your SSH keys to $HOME directory
+
 ```bash
 % skm backup
 
