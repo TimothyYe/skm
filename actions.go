@@ -31,7 +31,7 @@ func initialize(c *cli.Context) error {
 		//Create alias directory
 		err := os.Mkdir(filepath.Join(storePath, defaultKey), 0755)
 		if err != nil {
-			color.Green("%sFailed to create default key store!", checkSymbol)
+			color.Red("%sFailed to create default key store!", checkSymbol)
 			return nil
 		}
 
