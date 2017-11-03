@@ -27,6 +27,11 @@ func TestExecute(t *testing.T) {
 	if !result {
 		t.Error("should return true")
 	}
+
+	result = Execute("/home", "aaa")
+	if result {
+		t.Error("shoudl return false")
+	}
 }
 
 func TestParsePath(t *testing.T) {
