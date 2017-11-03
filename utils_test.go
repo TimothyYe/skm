@@ -40,6 +40,14 @@ func TestParsePath(t *testing.T) {
 	if path != "/etc/passwd" {
 		t.Error("path are not equal")
 	}
+
+	// parse symbol link
+	os.Symlink("/etc/passwd", "/tmp/passwd")
+	path = parsePath("/tmp/passwd")
+
+	if path != "/etc/passwd" {
+		t.Error("path are not equal")
+	}
 }
 
 func TestLoadSSHKeys(t *testing.T) {
