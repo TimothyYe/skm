@@ -40,21 +40,24 @@ func TestParsePath(t *testing.T) {
 }
 
 func TestLoadSSHKeys(t *testing.T) {
+	if _, err := os.Stat(StorePath); os.IsNotExist(err) {
+		Execute("", "mkdir", "-p", StorePath)
+	}
+
+	// Create a test key
+	Execute("", "mkdir", filepath.Join(StorePath, "testkey123"))
+	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa"))
+	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa.pub"))
+
 	keyMap := LoadSSHKeys()
 
-	if _, err := os.Stat(StorePath); !os.IsNotExist(err) {
-		if _, err := os.Stat(filepath.Join(StorePath, DefaultKey)); !os.IsNotExist(err) {
-			// Length of key map should greater than 0
-			if len(keyMap) == 0 {
-				t.Error("key map should not be empty")
-			}
-		}
-	} else {
-		// Should return empty keyMap since store path doesn't exist
-		if len(keyMap) > 0 {
-			t.Error("key map should be empty")
-		}
+	// Length of key map should greater than 0
+	if len(keyMap) == 0 {
+		t.Error("key map should not be empty")
 	}
+
+	// cleanup
+	os.RemoveAll(filepath.Join(StorePath, "testkey123"))
 }
 
 // WARNING: Make sure to backup your SSH keys before running this test case
