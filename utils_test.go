@@ -30,7 +30,7 @@ func TestExecute(t *testing.T) {
 
 	result = Execute("/home", "aaa")
 	if result {
-		t.Error("shoudl return false")
+		t.Error("should return false")
 	}
 }
 
@@ -89,7 +89,7 @@ func TestLoadSingleKey(t *testing.T) {
 			key := loadSingleKey(sshPath)
 
 			if key != nil {
-				t.Error("key shoudl be nil")
+				t.Error("key should be nil")
 			}
 		}
 	}
