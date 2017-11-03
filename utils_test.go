@@ -1,7 +1,6 @@
 package skm
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,16 +9,6 @@ import (
 func TestParseArgs(t *testing.T) {
 	os.Args = append(os.Args, "abc")
 	ParseArgs()
-
-	bytes, err := ioutil.ReadAll(os.Stdout)
-
-	if len(bytes) == 0 {
-		t.Error("should output logo info")
-	}
-
-	if err != nil {
-		t.Error("error should be nil")
-	}
 }
 
 func TestExecute(t *testing.T) {
@@ -48,6 +37,21 @@ func TestLoadSSHKeys(t *testing.T) {
 }
 
 // WARNING: Make sure to backup your SSH keys before running this test case
+func TestClearKey(t *testing.T) {
+	ClearKey()
+
+	PublicKeyPath := filepath.Join(SSHPath, PublicKey)
+	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
+		t.Error("should public key should be removed")
+	}
+
+	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
+	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
+		t.Error("should private key should be removed")
+	}
+}
+
+// WARNING: Make sure to backup your SSH keys before running this test case
 func TestCreateLink(t *testing.T) {
 	CreateLink("abc")
 
@@ -59,5 +63,13 @@ func TestCreateLink(t *testing.T) {
 	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
 	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
 		t.Error("should create symbol link for private key")
+	}
+}
+
+func TestGetBakFileName(t *testing.T) {
+	fileName := GetBakFileName()
+
+	if fileName == "" {
+		t.Error("file name shouldn't be empty")
 	}
 }
