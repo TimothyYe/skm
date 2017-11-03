@@ -97,7 +97,7 @@ func TestDeleteKey(t *testing.T) {
 
 func TestloadSingleKey(t *testing.T) {
 	sshPath := filepath.Join(getHomeDir(), ".ssh")
-	if _, err := os.Stat(filepath.Join(getHomeDir(), ".ssh", "id_rsa")); os.IsExist(err) {
+	if _, err := os.Stat(filepath.Join(getHomeDir(), ".ssh", "id_rsa")); !os.IsNotExist(err) {
 		key := loadSingleKey(sshPath)
 
 		if key == nil {
