@@ -92,24 +92,24 @@ func TestDeleteKey(t *testing.T) {
 	}
 }
 
-func TestloadSingleKey(t *testing.T) {
-	sshPath := filepath.Join(getHomeDir(), ".ssh")
-	if _, err := os.Stat(filepath.Join(getHomeDir(), ".ssh", "id_rsa")); !os.IsNotExist(err) {
-		key := loadSingleKey(sshPath)
+func TestLoadSingleKey(t *testing.T) {
+	sshPath := filepath.Join(getHomeDir(), ".sshtest")
 
-		if key == nil {
-			t.Error("key shouldn't be nil")
-		}
-	} else {
-		fileInfo, err := os.Lstat(sshPath)
-		if err == nil && fileInfo.Mode()&os.ModeSymlink != 0 {
-			key := loadSingleKey(sshPath)
-
-			if key != nil {
-				t.Error("key should be nil")
-			}
-		}
+	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
+		Execute("", "mkdir", "-p", sshPath)
 	}
+
+	Execute("", "touch", filepath.Join(sshPath, "id_rsa"))
+	Execute("", "touch", filepath.Join(sshPath, "id_rsa.pub"))
+
+	key := loadSingleKey(sshPath)
+
+	if key == nil {
+		t.Error("key shouldn't be nil")
+	}
+
+	// cleanup
+	os.RemoveAll(sshPath)
 }
 
 // WARNING: Make sure to backup your SSH keys before running this test case
