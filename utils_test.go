@@ -30,3 +30,17 @@ func TestLoadSSHKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestCreateLink(t *testing.T) {
+	CreateLink("abc")
+
+	PublicKeyPath := filepath.Join(SSHPath, PublicKey)
+	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
+		t.Error("should create symbol link for public key")
+	}
+
+	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
+	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
+		t.Error("should create symbol link for private key")
+	}
+}

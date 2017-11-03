@@ -72,15 +72,11 @@ func Execute(workDir, script string, args ...string) bool {
 func ClearKey() {
 	// Remove private key if exists
 	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
-	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
-		os.Remove(PrivateKeyPath)
-	}
+	os.Remove(PrivateKeyPath)
 
 	// Remove public key if exists
 	PublicKeyPath := filepath.Join(SSHPath, PublicKey)
-	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
-		os.Remove(PublicKeyPath)
-	}
+	os.Remove(PublicKeyPath)
 }
 
 // DeleteKey delete key by its alias name
@@ -116,6 +112,7 @@ func CreateLink(alias string) {
 
 	//Create symlink for private key
 	os.Symlink(filepath.Join(StorePath, alias, PrivateKey), filepath.Join(SSHPath, PrivateKey))
+
 	//Create symlink for public key
 	os.Symlink(filepath.Join(StorePath, alias, PublicKey), filepath.Join(SSHPath, PublicKey))
 }
