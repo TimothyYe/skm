@@ -1,13 +1,14 @@
-package main
+package skm
 
 import (
 	"github.com/fatih/color"
 )
 
 var (
-	//Version of SKM
+	// Version of SKM
 	Version = "0.1"
 	logo    = `
+
 ███████╗██╗  ██╗███╗   ███╗
 ██╔════╝██║ ██╔╝████╗ ████║
 ███████╗█████╔╝ ██╔████╔██║

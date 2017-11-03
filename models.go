@@ -1,4 +1,4 @@
-package main
+package skm
 
 //SSHKey struct includes both private/public keys & isDefault flag
 type SSHKey struct {

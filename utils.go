@@ -1,4 +1,4 @@
-package main
+package skm
 
 import (
 	"fmt"
@@ -12,23 +12,33 @@ import (
 )
 
 const (
-	name  = "SKM"
-	usage = "Manage your multiple SSH keys easily"
+	// Name is the program name
+	Name = "SKM"
+	// Usage is for simple description
+	Usage = "Manage your multiple SSH keys easily"
 
-	checkSymbol = "\u2714 "
-	crossSymbol = "\u2716 "
+	// CheckSymbol is the code for check symbol
+	CheckSymbol = "\u2714 "
+	// CrossSymbol is the code for check symbol
+	CrossSymbol = "\u2716 "
 
-	publicKey  = "id_rsa.pub"
-	privateKey = "id_rsa"
-	defaultKey = "default"
+	// PublicKey is the default name of SSH public key
+	PublicKey = "id_rsa.pub"
+	// PrivateKey is the default name of SSH private key
+	PrivateKey = "id_rsa"
+	// DefaultKey is the default alias name of SSH key
+	DefaultKey = "default"
 )
 
 var (
-	storePath = filepath.Join(os.Getenv("HOME"), ".skm")
-	sshPath   = filepath.Join(os.Getenv("HOME"), ".ssh")
+	// StorePath is the default SKM key path to store all the SSH keys
+	StorePath = filepath.Join(os.Getenv("HOME"), ".skm")
+	// SSHPath is the default SSH key path
+	SSHPath = filepath.Join(os.Getenv("HOME"), ".ssh")
 )
 
-func parseArgs() {
+// ParseArgs parses input arguments and displays the program logo
+func ParseArgs() {
 	if len(os.Args) == 1 {
 		displayLogo()
 	} else if len(os.Args) == 2 {
@@ -38,7 +48,8 @@ func parseArgs() {
 	}
 }
 
-func execute(workDir, script string, args ...string) bool {
+// Execute executes shell commands with arguments
+func Execute(workDir, script string, args ...string) bool {
 	cmd := exec.Command(script, args...)
 
 	if workDir != "" {
@@ -50,29 +61,31 @@ func execute(workDir, script string, args ...string) bool {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		color.Red("%s%s", crossSymbol, err.Error())
+		color.Red("%s%s", CrossSymbol, err.Error())
 		return false
 	}
 
 	return true
 }
 
-func clearKey() {
-	//Remove private key if exists
-	privateKeyPath := filepath.Join(sshPath, privateKey)
-	if _, err := os.Stat(privateKeyPath); !os.IsNotExist(err) {
-		os.Remove(privateKeyPath)
+// ClearKey clears both private & public keys from SSH key path
+func ClearKey() {
+	// Remove private key if exists
+	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
+	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
+		os.Remove(PrivateKeyPath)
 	}
 
-	//Remove public key if exists
-	publicKeyPath := filepath.Join(sshPath, publicKey)
-	if _, err := os.Stat(publicKeyPath); !os.IsNotExist(err) {
-		os.Remove(publicKeyPath)
+	// Remove public key if exists
+	PublicKeyPath := filepath.Join(SSHPath, PublicKey)
+	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
+		os.Remove(PublicKeyPath)
 	}
 }
 
-func deleteKey(alias string, key *SSHKey) {
-	inUse := key.PrivateKey == parsePath(filepath.Join(sshPath, privateKey))
+// DeleteKey delete key by its alias name
+func DeleteKey(alias string, key *SSHKey) {
+	inUse := key.PrivateKey == parsePath(filepath.Join(SSHPath, PrivateKey))
 
 	if inUse {
 		fmt.Print(color.BlueString("SSH key [%s] is currently in use, please confirm to delete it [y/n]: ", alias))
@@ -85,25 +98,26 @@ func deleteKey(alias string, key *SSHKey) {
 	if input == "y" {
 
 		if inUse {
-			clearKey()
+			ClearKey()
 		}
 
 		//Remove specified key by alias name
-		if err := os.RemoveAll(filepath.Join(storePath, alias)); err == nil {
-			color.Green("%sSSH key [%s] deleted!", checkSymbol, alias)
+		if err := os.RemoveAll(filepath.Join(StorePath, alias)); err == nil {
+			color.Green("%sSSH key [%s] deleted!", CheckSymbol, alias)
 		} else {
-			color.Red("%sFailed to delete SSH key [%s]!", crossSymbol, alias)
+			color.Red("%sFailed to delete SSH key [%s]!", CrossSymbol, alias)
 		}
 	}
 }
 
-func createLink(alias string) {
-	clearKey()
+// CreateLink creates symbol link for specified SSH key
+func CreateLink(alias string) {
+	ClearKey()
 
 	//Create symlink for private key
-	os.Symlink(filepath.Join(storePath, alias, privateKey), filepath.Join(sshPath, privateKey))
+	os.Symlink(filepath.Join(StorePath, alias, PrivateKey), filepath.Join(SSHPath, PrivateKey))
 	//Create symlink for public key
-	os.Symlink(filepath.Join(storePath, alias, publicKey), filepath.Join(sshPath, publicKey))
+	os.Symlink(filepath.Join(StorePath, alias, PublicKey), filepath.Join(SSHPath, PublicKey))
 }
 
 func loadSingleKey(keyPath string) *SSHKey {
@@ -131,7 +145,7 @@ func loadSingleKey(keyPath string) *SSHKey {
 		//Check if key is in use
 		key.PrivateKey = path
 
-		if path == parsePath(filepath.Join(sshPath, privateKey)) {
+		if path == parsePath(filepath.Join(SSHPath, PrivateKey)) {
 			key.IsDefault = true
 		}
 
@@ -170,16 +184,17 @@ func parsePath(path string) string {
 	return path
 }
 
-func loadSSHKeys() map[string]*SSHKey {
+// LoadSSHKeys loads all the SSH keys from key store
+func LoadSSHKeys() map[string]*SSHKey {
 	keys := map[string]*SSHKey{}
 
 	//Walkthrough SSH key store and load all the keys
-	err := filepath.Walk(storePath, func(path string, f os.FileInfo, err error) error {
+	err := filepath.Walk(StorePath, func(path string, f os.FileInfo, err error) error {
 		if f == nil {
 			return err
 		}
 
-		if path == storePath {
+		if path == StorePath {
 			return nil
 		}
 
@@ -202,6 +217,7 @@ func loadSSHKeys() map[string]*SSHKey {
 	return keys
 }
 
-func getBakFileName() string {
+// GetBakFileName generates a backup file name by current date and time
+func GetBakFileName() string {
 	return fmt.Sprintf("skm-%s.tar.gz", time.Now().Format("20060102150405"))
 }
