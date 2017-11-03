@@ -100,6 +100,7 @@ func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
 		fmt.Scan(&input)
 	} else {
 		input = "y"
+		inUse = true
 	}
 
 	if input == "y" {

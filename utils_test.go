@@ -16,6 +16,9 @@ func getHomeDir() string {
 }
 
 func TestParseArgs(t *testing.T) {
+	os.Args = []string{"skm"}
+	ParseArgs()
+	os.Args = []string{"skm", "-h"}
 	ParseArgs()
 }
 
