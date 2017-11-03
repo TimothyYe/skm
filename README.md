@@ -1,6 +1,6 @@
 ![](https://raw.githubusercontent.com/TimothyYe/skm/master/snapshots/skm.png)
 
-[![Release][3]][4] [![MIT licensed][5]][6] [![Build Status][1]][2] [![Go Report Card][7]][8]
+[![Release][3]][4] [![MIT licensed][5]][6] [![Build Status][1]][2] [![Go Report Card][7]][8] [![GoDoc][9]][10]
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
@@ -10,6 +10,8 @@
 [6]: LICENSE
 [7]: https://goreportcard.com/badge/github.com/timothyye/skm
 [8]: https://goreportcard.com/report/github.com/timothyye/skm
+[9]: https://godoc.org/github.com/TimothyYe/skm?status.svg
+[10]: https://godoc.org/github.com/TimothyYe/skm
 
 SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multiple SSH keys easily!
 
