@@ -1,6 +1,6 @@
 ![](https://raw.githubusercontent.com/TimothyYe/skm/master/snapshots/skm.png)
 
-[![Release][3]][4] [![MIT licensed][5]][6] [![Build Status][1]][2] [![Go Report Card][7]][8] [GoCover.io][11]][12] [![GoDoc][9]][10]
+[![Release][3]][4] [![MIT licensed][5]][6] [![Build Status][1]][2] [![Go Report Card][7]][8] [![GoCover.io][11]][12] [![GoDoc][9]][10]
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
