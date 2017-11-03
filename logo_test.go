@@ -2,7 +2,7 @@ package skm
 
 import "testing"
 
-func TestdisplayLogo(t *testing.T) {
+func TestDisplayLogo(t *testing.T) {
 	displayLogo()
 	t.Log("test displayLogo func")
 }
