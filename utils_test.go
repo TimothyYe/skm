@@ -1,13 +1,29 @@
 package skm
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
+func TestParseArgs(t *testing.T) {
+	os.Args = append(os.Args, "abc")
+	ParseArgs()
+
+	bytes, err := ioutil.ReadAll(os.Stdout)
+
+	if len(bytes) == 0 {
+		t.Error("should output logo info")
+	}
+
+	if err != nil {
+		t.Error("error should be nil")
+	}
+}
+
 func TestExecute(t *testing.T) {
-	result := Execute("", "ls")
+	result := Execute("/home", "ls")
 	if !result {
 		t.Error("should return true")
 	}
@@ -31,6 +47,7 @@ func TestLoadSSHKeys(t *testing.T) {
 	}
 }
 
+// WARNING: Make sure to backup your SSH keys before running this test case
 func TestCreateLink(t *testing.T) {
 	CreateLink("abc")
 
