@@ -75,6 +75,26 @@ func TestClearKey(t *testing.T) {
 	}
 }
 
+func TestDeleteKey(t *testing.T) {
+	if _, err := os.Stat(StorePath); os.IsNotExist(err) {
+		Execute("", "mkdir", "-p", StorePath)
+	}
+
+	//Create a test key
+	Execute("", "mkdir", filepath.Join(StorePath, "testkey123"))
+	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa"))
+	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa.pub"))
+
+	//Construct a key
+	key := SSHKey{PrivateKey: filepath.Join(StorePath, "testkey123", "id_rsa"), PublicKey: filepath.Join(StorePath, "testkey123", "id_rsa.pub")}
+	//Delete key
+	DeleteKey("testkey123", &key, true)
+
+	if _, err := os.Stat(filepath.Join(StorePath, "testkey123")); !os.IsNotExist(err) {
+		t.Error("key should be deleted")
+	}
+}
+
 func TestLoadSingleKey(t *testing.T) {
 	sshPath := filepath.Join(getHomeDir(), ".ssh")
 	if _, err := os.Stat(filepath.Join(getHomeDir(), ".ssh", "id_rsa")); os.IsExist(err) {

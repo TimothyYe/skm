@@ -80,19 +80,29 @@ func ClearKey() {
 }
 
 // DeleteKey delete key by its alias name
-func DeleteKey(alias string, key *SSHKey) {
+func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
 	inUse := key.PrivateKey == parsePath(filepath.Join(SSHPath, PrivateKey))
-
-	if inUse {
-		fmt.Print(color.BlueString("SSH key [%s] is currently in use, please confirm to delete it [y/n]: ", alias))
-	} else {
-		fmt.Print(color.BlueString("Please confirm to delete SSH key [%s] [y/n]: ", alias))
-	}
+	var testMode bool
 	var input string
-	fmt.Scan(&input)
+
+	if len(forTest) > 0 {
+		testMode = true
+	} else {
+		testMode = false
+	}
+
+	if !testMode {
+		if inUse {
+			fmt.Print(color.BlueString("SSH key [%s] is currently in use, please confirm to delete it [y/n]: ", alias))
+		} else {
+			fmt.Print(color.BlueString("Please confirm to delete SSH key [%s] [y/n]: ", alias))
+		}
+		fmt.Scan(&input)
+	} else {
+		input = "y"
+	}
 
 	if input == "y" {
-
 		if inUse {
 			ClearKey()
 		}
