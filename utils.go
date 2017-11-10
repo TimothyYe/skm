@@ -2,6 +2,7 @@ package skm
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -217,4 +218,19 @@ func LoadSSHKeys() map[string]*SSHKey {
 // GetBakFileName generates a backup file name by current date and time
 func GetBakFileName() string {
 	return fmt.Sprintf("skm-%s.tar.gz", time.Now().Format("20060102150405"))
+}
+
+// IsEmpty checks if directory in path is empty
+func IsEmpty(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }
