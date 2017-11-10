@@ -158,7 +158,7 @@ func delete(c *cli.Context) error {
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input key alias name!")
+		color.Red("%sPlease input key alias name!", skm.CrossSymbol)
 		return nil
 	}
 
@@ -171,6 +171,26 @@ func delete(c *cli.Context) error {
 
 	// Set key with related alias as default used key
 	skm.DeleteKey(alias, key)
+	return nil
+}
+
+func rename(c *cli.Context) error {
+	var alias, newAlias string
+
+	if c.NArg() == 2 {
+		alias = c.Args().Get(0)
+		newAlias = c.Args().Get(1)
+
+		err := os.Rename(filepath.Join(skm.StorePath, alias), filepath.Join(skm.StorePath, newAlias))
+
+		if err == nil {
+			color.Green("%s SSH key [%s] renamed to [%s]", skm.CheckSymbol, alias, newAlias)
+			return nil
+		}
+	} else {
+		color.Red("%s Please input current alias name and new alias name", skm.CrossSymbol)
+	}
+
 	return nil
 }
 

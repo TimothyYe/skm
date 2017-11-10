@@ -41,6 +41,12 @@ func initCommands() []cli.Command {
 			Action:  delete,
 		},
 		{
+			Name:    "rename",
+			Aliases: []string{"rn"},
+			Usage:   "Rename SSH key alias name to a new one",
+			Action:  rename,
+		},
+		{
 			Name:    "backup",
 			Aliases: []string{"b"},
 			Usage:   "Backup all SSH keys to an archive file",
