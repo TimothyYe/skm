@@ -185,7 +185,8 @@ func rename(c *cli.Context) error {
 
 		if err == nil {
 			color.Green("%s SSH key [%s] renamed to [%s]", skm.CheckSymbol, alias, newAlias)
-			return nil
+		} else {
+			color.Red("%s Failed to rename SSH key!", skm.CrossSymbol)
 		}
 	} else {
 		color.Red("%s Please input current alias name and new alias name", skm.CrossSymbol)
