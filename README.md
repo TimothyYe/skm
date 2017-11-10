@@ -4,7 +4,7 @@
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
-[3]: https://img.shields.io/badge/release-v0.2.1-brightgreen.svg
+[3]: https://img.shields.io/badge/release-v0.3-brightgreen.svg
 [4]: https://github.com/TimothyYe/skm/releases
 [5]: https://img.shields.io/dub/l/vibe-d.svg
 [6]: LICENSE
@@ -24,6 +24,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Create, List, Delete your SSH key(s)
 * Manage all your SSH keys by alias names
 * Choose and set a default SSH key
+* Rename SSH key alias name
 * Backup and restore all your SSH keys
 
 ## Installation
@@ -67,6 +68,7 @@ COMMANDS:
      ls, l       List all the available SSH keys
      use, u      Set specific SSH key as default by its alias name
      delete, d   Delete specific SSH key by alias name
+		 rename, rn  Rename SSH key alias name to a new one
      backup, b   Backup all SSH keys to an archive file
      restore, r  Restore SSH keys from an existing archive file
      help, h     Shows a list of commands or help for one command
@@ -128,6 +130,13 @@ Now using SSH key: dev
 
 Please confirm to delete SSH key [prod] [y/n]: y
 ✔ SSH key [prod] deleted!
+```
+
+### Rename a SSH key with a new alias name
+
+```bash
+% skm rn test tmp
+✔  SSH key [test] renamed to [tmp]
 ```
 
 ### Backup SSH keys
