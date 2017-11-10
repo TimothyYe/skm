@@ -37,17 +37,6 @@ var (
 	SSHPath = filepath.Join(os.Getenv("HOME"), ".ssh")
 )
 
-// ParseArgs parses input arguments and displays the program logo
-func ParseArgs() {
-	if len(os.Args) == 1 {
-		displayLogo()
-	} else if len(os.Args) == 2 {
-		if os.Args[1] == "-h" || os.Args[1] == "--help" || os.Args[1] == "h" || os.Args[1] == "help" {
-			displayLogo()
-		}
-	}
-}
-
 // Execute executes shell commands with arguments
 func Execute(workDir, script string, args ...string) bool {
 	cmd := exec.Command(script, args...)
