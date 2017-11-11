@@ -17,7 +17,7 @@ func initialize(c *cli.Context) error {
 		err := os.Remove(skm.StorePath)
 
 		if err != nil {
-			color.Red("%sFailed to remove existing empty key store!", skm.CheckSymbol)
+			color.Red("%sFailed to remove existing empty key store!", skm.CrossSymbol)
 		}
 	}
 
