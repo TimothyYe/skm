@@ -12,6 +12,15 @@ import (
 )
 
 func initialize(c *cli.Context) error {
+	// Remove existing empty key store if exists
+	if _, err := skm.IsEmpty(skm.StorePath); !os.IsNotExist(err) {
+		err := os.Remove(skm.StorePath)
+
+		if err != nil {
+			color.Red("%sFailed to remove existing empty key store!", skm.CrossSymbol)
+		}
+	}
+
 	// Check the existence of key store
 	if _, err := os.Stat(skm.StorePath); !os.IsNotExist(err) {
 		color.Green("%sSSH key store already exists.", skm.CheckSymbol)

@@ -141,3 +141,16 @@ func TestGetBakFileName(t *testing.T) {
 		t.Error("file name shouldn't be empty")
 	}
 }
+
+func TestIsEmpty(t *testing.T) {
+	skmPath := filepath.Join(getHomeDir(), ".skmtest")
+	os.RemoveAll(skmPath)
+
+	if _, err := os.Stat(skmPath); os.IsNotExist(err) {
+		Execute("", "mkdir", "-p", skmPath)
+	}
+
+	if ok, err := IsEmpty(skmPath); err != nil || !ok {
+		t.Error("directory should be empty")
+	}
+}
