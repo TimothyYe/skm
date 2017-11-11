@@ -157,7 +157,7 @@ func use(c *cli.Context) error {
 
 	// Set key with related alias as default used key
 	skm.CreateLink(alias)
-	color.Green("Now using SSH key: %s", alias)
+	color.Green("Now using SSH key: [%s]", alias)
 	return nil
 }
 
