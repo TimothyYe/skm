@@ -15,13 +15,6 @@ func getHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-func TestParseArgs(t *testing.T) {
-	os.Args = []string{"skm"}
-	ParseArgs()
-	os.Args = []string{"skm", "-h"}
-	ParseArgs()
-}
-
 func TestExecute(t *testing.T) {
 	result := Execute("/home", "ls")
 	if !result {
