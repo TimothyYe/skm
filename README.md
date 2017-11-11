@@ -68,7 +68,7 @@ COMMANDS:
      ls, l       List all the available SSH keys
      use, u      Set specific SSH key as default by its alias name
      delete, d   Delete specific SSH key by alias name
-		 rename, rn  Rename SSH key alias name to a new one
+     rename, rn  Rename SSH key alias name to a new one
      backup, b   Backup all SSH keys to an archive file
      restore, r  Restore SSH keys from an existing archive file
      help, h     Shows a list of commands or help for one command
