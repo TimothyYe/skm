@@ -4,7 +4,7 @@
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
-[3]: https://img.shields.io/badge/release-v0.3.1-brightgreen.svg
+[3]: https://img.shields.io/badge/release-v0.3.2-brightgreen.svg
 [4]: https://github.com/TimothyYe/skm/releases
 [5]: https://img.shields.io/dub/l/vibe-d.svg
 [6]: LICENSE
@@ -50,7 +50,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.3.1
+SKM V0.3.2
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -60,7 +60,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.3.1
+   0.3.2
 
 COMMANDS:
      init, i     Initialize SSH keys store for the first time usage.
