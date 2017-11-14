@@ -204,6 +204,11 @@ func rename(c *cli.Context) error {
 	return nil
 }
 
+func copy(c *cli.Context) error {
+
+	return nil
+}
+
 func backup(c *cli.Context) error {
 	fileName := skm.GetBakFileName()
 	dstFile := filepath.Join(os.Getenv("HOME"), fileName)

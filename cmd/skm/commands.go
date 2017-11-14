@@ -47,6 +47,12 @@ func initCommands() []cli.Command {
 			Action:  rename,
 		},
 		{
+			Name:    "copy",
+			Aliases: []string{"cp"},
+			Usage:   "Copy current SSH public key to a remote host",
+			Action:  copy,
+		},
+		{
 			Name:    "backup",
 			Aliases: []string{"b"},
 			Usage:   "Backup all SSH keys to an archive file",
