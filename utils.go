@@ -71,7 +71,7 @@ func ClearKey() {
 
 // DeleteKey delete key by its alias name
 func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
-	inUse := key.PrivateKey == parsePath(filepath.Join(SSHPath, PrivateKey))
+	inUse := key.PrivateKey == ParsePath(filepath.Join(SSHPath, PrivateKey))
 	var testMode bool
 	var input string
 
@@ -143,7 +143,7 @@ func loadSingleKey(keyPath string) *SSHKey {
 		//Check if key is in use
 		key.PrivateKey = path
 
-		if path == parsePath(filepath.Join(SSHPath, PrivateKey)) {
+		if path == ParsePath(filepath.Join(SSHPath, PrivateKey)) {
 			key.IsDefault = true
 		}
 
@@ -162,7 +162,8 @@ func loadSingleKey(keyPath string) *SSHKey {
 	return nil
 }
 
-func parsePath(path string) string {
+// ParsePath return the original SSH key path if it is a symbol link
+func ParsePath(path string) string {
 	fileInfo, err := os.Lstat(path)
 
 	if err != nil {

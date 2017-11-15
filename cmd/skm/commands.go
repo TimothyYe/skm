@@ -51,6 +51,9 @@ func initCommands() []cli.Command {
 			Aliases: []string{"cp"},
 			Usage:   "Copy current SSH public key to a remote host",
 			Action:  copy,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "p", Usage: "SSH port"},
+			},
 		},
 		{
 			Name:    "backup",

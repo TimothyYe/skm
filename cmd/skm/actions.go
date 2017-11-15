@@ -205,6 +205,25 @@ func rename(c *cli.Context) error {
 }
 
 func copy(c *cli.Context) error {
+	host := c.Args().Get(0)
+	args := []string{}
+
+	port := c.String("p")
+	if port != "" {
+		args = append(args, "-p")
+		args = append(args, port)
+	}
+
+	keyPath := skm.ParsePath(filepath.Join(skm.SSHPath, skm.PrivateKey))
+	args = append(args, "-i")
+	args = append(args, keyPath)
+	args = append(args, host)
+
+	result := skm.Execute("", "ssh-copy-id", args...)
+
+	if result {
+		color.Green("%s Current SSH key already copied to remote host", skm.CheckSymbol)
+	}
 
 	return nil
 }
