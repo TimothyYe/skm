@@ -39,7 +39,7 @@ brew install timothyye/tap/skm
 #### Using Go
 
 ```bash
-go get github.com/TimothyYe/skm
+go get github.com/TimothyYe/skm/cmd/skm
 ```
 
 #### Manual Installation
