@@ -36,7 +36,7 @@ func TestParsePath(t *testing.T) {
 
 	// parse symbol link
 	os.Symlink("/etc/passwd", "/tmp/passwd")
-	path = parsePath("/tmp/passwd")
+	path = ParsePath("/tmp/passwd")
 
 	if path != "/etc/passwd" {
 		t.Error("path are not equal")
