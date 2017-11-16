@@ -28,7 +28,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestParsePath(t *testing.T) {
-	path := parsePath("/etc/passwd")
+	path := ParsePath("/etc/passwd")
 
 	if path != "/etc/passwd" {
 		t.Error("path are not equal")
