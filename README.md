@@ -4,7 +4,7 @@
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
-[3]: https://img.shields.io/badge/release-v0.3.2-brightgreen.svg
+[3]: https://img.shields.io/badge/release-v0.3.3-brightgreen.svg
 [4]: https://github.com/TimothyYe/skm/releases
 [5]: https://img.shields.io/dub/l/vibe-d.svg
 [6]: LICENSE
@@ -50,7 +50,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.3.2
+SKM V0.3.3
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -60,7 +60,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.3.2
+   0.3.3
 
 COMMANDS:
      init, i     Initialize SSH keys store for the first time usage.
@@ -131,6 +131,23 @@ Now using SSH key: dev
 
 Please confirm to delete SSH key [prod] [y/n]: y
 ✔ SSH key [prod] deleted!
+```
+### Copy SSH public key to a remote host
+
+```bash
+% skm cp timothy@example.com
+
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/Users/timothy/.skm/default/id_rsa.pub"
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+timothy@example.com's password:
+
+Number of key(s) added:        1
+
+Now try logging into the machine, with:   "ssh 'timothy@example.com'"
+and check to make sure that only the key(s) you wanted were added.
+
+✔  Current SSH key already copied to remote host
 ```
 
 ### Rename a SSH key with a new alias name
