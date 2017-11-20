@@ -12,7 +12,7 @@ func TestUsage(t *testing.T) {
 	cmd := exec.Command("skm", "-h")
 	_, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatal("Expected exit code 1 bot 0")
+		t.Fatal("Expected exit code 1 but 0")
 	}
 }
 
