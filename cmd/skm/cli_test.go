@@ -3,15 +3,12 @@ package main
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 func TestUsage(t *testing.T) {
-	tmp := prepareTest(t)
-	defer os.RemoveAll(tmp)
+	prepareTest(t)
+	defer os.Remove("$GOPATH/bin/skm`")
 	cmd := exec.Command("skm", "-h")
 	_, err := cmd.CombinedOutput()
 	if err != nil {
@@ -20,9 +17,9 @@ func TestUsage(t *testing.T) {
 }
 
 func TestInvalidArgs(t *testing.T) {
-	tmp := prepareTest(t)
+	prepareTest(t)
 	expectString := "No help topic for 'hogehoge'\n"
-	defer os.RemoveAll(tmp)
+	defer os.Remove("$GOPATH/bin/skm`")
 	cmd := exec.Command("skm", "hogehoge")
 	b, _ := cmd.CombinedOutput()
 
@@ -31,13 +28,8 @@ func TestInvalidArgs(t *testing.T) {
 	}
 }
 
-func prepareTest(t *testing.T) (tmpPath string) {
-	tmp := os.TempDir()
-	tmp = filepath.Join(tmp, uuid.NewV4().String())
-	runCmd(t, "go", "build", "-o", filepath.Join(tmp, "bin", "skm"), "github.com/TimothyYe/skm")
-	os.Setenv("PATH", filepath.Join(tmp, "bin")+string(filepath.ListSeparator)+os.Getenv("PATH"))
-	os.MkdirAll(filepath.Join(tmp, "src"), 0755)
-	return tmp
+func prepareTest(t *testing.T) {
+	runCmd(t, "go", "install")
 }
 
 func runCmd(t *testing.T, cmd string, args ...string) []byte {
