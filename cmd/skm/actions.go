@@ -12,6 +12,15 @@ import (
 )
 
 func initialize(c *cli.Context) error {
+	// Remove existing empty key store if exists
+	if _, err := skm.IsEmpty(skm.StorePath); !os.IsNotExist(err) {
+		err := os.Remove(skm.StorePath)
+
+		if err != nil {
+			color.Red("%sFailed to remove existing empty key store!", skm.CrossSymbol)
+		}
+	}
+
 	// Check the existence of key store
 	if _, err := os.Stat(skm.StorePath); !os.IsNotExist(err) {
 		color.Green("%sSSH key store already exists.", skm.CheckSymbol)
@@ -148,7 +157,7 @@ func use(c *cli.Context) error {
 
 	// Set key with related alias as default used key
 	skm.CreateLink(alias)
-	color.Green("Now using SSH key: %s", alias)
+	color.Green("Now using SSH key: [%s]", alias)
 	return nil
 }
 
@@ -158,7 +167,7 @@ func delete(c *cli.Context) error {
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input key alias name!")
+		color.Red("%sPlease input key alias name!", skm.CrossSymbol)
 		return nil
 	}
 
@@ -171,6 +180,51 @@ func delete(c *cli.Context) error {
 
 	// Set key with related alias as default used key
 	skm.DeleteKey(alias, key)
+	return nil
+}
+
+func rename(c *cli.Context) error {
+	var alias, newAlias string
+
+	if c.NArg() == 2 {
+		alias = c.Args().Get(0)
+		newAlias = c.Args().Get(1)
+
+		err := os.Rename(filepath.Join(skm.StorePath, alias), filepath.Join(skm.StorePath, newAlias))
+
+		if err == nil {
+			color.Green("%s SSH key [%s] renamed to [%s]", skm.CheckSymbol, alias, newAlias)
+		} else {
+			color.Red("%s Failed to rename SSH key!", skm.CrossSymbol)
+		}
+	} else {
+		color.Red("%s Please input current alias name and new alias name", skm.CrossSymbol)
+	}
+
+	return nil
+}
+
+func copy(c *cli.Context) error {
+	host := c.Args().Get(0)
+	args := []string{}
+
+	port := c.String("p")
+	if port != "" {
+		args = append(args, "-p")
+		args = append(args, port)
+	}
+
+	keyPath := skm.ParsePath(filepath.Join(skm.SSHPath, skm.PrivateKey))
+	args = append(args, "-i")
+	args = append(args, keyPath)
+	args = append(args, host)
+
+	result := skm.Execute("", "ssh-copy-id", args...)
+
+	if result {
+		color.Green("%s Current SSH key already copied to remote host", skm.CheckSymbol)
+	}
+
 	return nil
 }
 

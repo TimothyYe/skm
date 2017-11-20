@@ -2,6 +2,7 @@ package skm
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,17 +38,6 @@ var (
 	SSHPath = filepath.Join(os.Getenv("HOME"), ".ssh")
 )
 
-// ParseArgs parses input arguments and displays the program logo
-func ParseArgs() {
-	if len(os.Args) == 1 {
-		displayLogo()
-	} else if len(os.Args) == 2 {
-		if os.Args[1] == "-h" || os.Args[1] == "--help" || os.Args[1] == "h" || os.Args[1] == "help" {
-			displayLogo()
-		}
-	}
-}
-
 // Execute executes shell commands with arguments
 func Execute(workDir, script string, args ...string) bool {
 	cmd := exec.Command(script, args...)
@@ -81,7 +71,7 @@ func ClearKey() {
 
 // DeleteKey delete key by its alias name
 func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
-	inUse := key.PrivateKey == parsePath(filepath.Join(SSHPath, PrivateKey))
+	inUse := key.PrivateKey == ParsePath(filepath.Join(SSHPath, PrivateKey))
 	var testMode bool
 	var input string
 
@@ -153,7 +143,7 @@ func loadSingleKey(keyPath string) *SSHKey {
 		//Check if key is in use
 		key.PrivateKey = path
 
-		if path == parsePath(filepath.Join(SSHPath, PrivateKey)) {
+		if path == ParsePath(filepath.Join(SSHPath, PrivateKey)) {
 			key.IsDefault = true
 		}
 
@@ -172,7 +162,8 @@ func loadSingleKey(keyPath string) *SSHKey {
 	return nil
 }
 
-func parsePath(path string) string {
+// ParsePath return the original SSH key path if it is a symbol link
+func ParsePath(path string) string {
 	fileInfo, err := os.Lstat(path)
 
 	if err != nil {
@@ -228,4 +219,19 @@ func LoadSSHKeys() map[string]*SSHKey {
 // GetBakFileName generates a backup file name by current date and time
 func GetBakFileName() string {
 	return fmt.Sprintf("skm-%s.tar.gz", time.Now().Format("20060102150405"))
+}
+
+// IsEmpty checks if directory in path is empty
+func IsEmpty(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }

@@ -4,7 +4,7 @@
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
-[3]: https://img.shields.io/badge/release-v0.2.1-brightgreen.svg
+[3]: https://img.shields.io/badge/release-v0.3.3-brightgreen.svg
 [4]: https://github.com/TimothyYe/skm/releases
 [5]: https://img.shields.io/dub/l/vibe-d.svg
 [6]: LICENSE
@@ -24,6 +24,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Create, List, Delete your SSH key(s)
 * Manage all your SSH keys by alias names
 * Choose and set a default SSH key
+* Rename SSH key alias name
 * Backup and restore all your SSH keys
 
 ## Installation
@@ -38,7 +39,7 @@ brew install timothyye/tap/skm
 #### Using Go
 
 ```bash
-go get github.com/TimothyYe/skm
+go get github.com/TimothyYe/skm/cmd/skm
 ```
 
 #### Manual Installation
@@ -49,7 +50,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.1
+SKM V0.3.3
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -59,7 +60,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.1
+   0.3.3
 
 COMMANDS:
      init, i     Initialize SSH keys store for the first time usage.
@@ -67,6 +68,8 @@ COMMANDS:
      ls, l       List all the available SSH keys
      use, u      Set specific SSH key as default by its alias name
      delete, d   Delete specific SSH key by alias name
+     rename, rn  Rename SSH key alias name to a new one
+     copy, cp    Copy current SSH public key to a remote host
      backup, b   Backup all SSH keys to an archive file
      restore, r  Restore SSH keys from an existing archive file
      help, h     Shows a list of commands or help for one command
@@ -128,6 +131,30 @@ Now using SSH key: dev
 
 Please confirm to delete SSH key [prod] [y/n]: y
 ✔ SSH key [prod] deleted!
+```
+### Copy SSH public key to a remote host
+
+```bash
+% skm cp timothy@example.com
+
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/Users/timothy/.skm/default/id_rsa.pub"
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+timothy@example.com's password:
+
+Number of key(s) added:        1
+
+Now try logging into the machine, with:   "ssh 'timothy@example.com'"
+and check to make sure that only the key(s) you wanted were added.
+
+✔  Current SSH key already copied to remote host
+```
+
+### Rename a SSH key with a new alias name
+
+```bash
+% skm rn test tmp
+✔  SSH key [test] renamed to [tmp]
 ```
 
 ### Backup SSH keys

@@ -15,13 +15,6 @@ func getHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-func TestParseArgs(t *testing.T) {
-	os.Args = []string{"skm"}
-	ParseArgs()
-	os.Args = []string{"skm", "-h"}
-	ParseArgs()
-}
-
 func TestExecute(t *testing.T) {
 	result := Execute("/home", "ls")
 	if !result {
@@ -35,7 +28,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestParsePath(t *testing.T) {
-	path := parsePath("/etc/passwd")
+	path := ParsePath("/etc/passwd")
 
 	if path != "/etc/passwd" {
 		t.Error("path are not equal")
@@ -43,7 +36,7 @@ func TestParsePath(t *testing.T) {
 
 	// parse symbol link
 	os.Symlink("/etc/passwd", "/tmp/passwd")
-	path = parsePath("/tmp/passwd")
+	path = ParsePath("/tmp/passwd")
 
 	if path != "/etc/passwd" {
 		t.Error("path are not equal")
@@ -146,5 +139,18 @@ func TestGetBakFileName(t *testing.T) {
 
 	if fileName == "" {
 		t.Error("file name shouldn't be empty")
+	}
+}
+
+func TestIsEmpty(t *testing.T) {
+	skmPath := filepath.Join(getHomeDir(), ".skmtest")
+	os.RemoveAll(skmPath)
+
+	if _, err := os.Stat(skmPath); os.IsNotExist(err) {
+		Execute("", "mkdir", "-p", skmPath)
+	}
+
+	if ok, err := IsEmpty(skmPath); err != nil || !ok {
+		t.Error("directory should be empty")
 	}
 }

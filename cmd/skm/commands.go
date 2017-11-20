@@ -41,6 +41,21 @@ func initCommands() []cli.Command {
 			Action:  delete,
 		},
 		{
+			Name:    "rename",
+			Aliases: []string{"rn"},
+			Usage:   "Rename SSH key alias name to a new one",
+			Action:  rename,
+		},
+		{
+			Name:    "copy",
+			Aliases: []string{"cp"},
+			Usage:   "Copy current SSH public key to a remote host",
+			Action:  copy,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "p", Usage: "SSH port"},
+			},
+		},
+		{
 			Name:    "backup",
 			Aliases: []string{"b"},
 			Usage:   "Backup all SSH keys to an archive file",
