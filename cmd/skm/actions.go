@@ -31,7 +31,7 @@ func initialize(c *cli.Context) error {
 		err := os.Mkdir(skm.StorePath, 0755)
 
 		if err != nil {
-			color.Red("%sFailed to initialize SSH key store!", skm.CheckSymbol)
+			color.Red("%sFailed to initialize SSH key store!", skm.CrossSymbol)
 			return nil
 		}
 	}
@@ -41,7 +41,7 @@ func initialize(c *cli.Context) error {
 		// Create alias directory
 		err := os.Mkdir(filepath.Join(skm.StorePath, skm.DefaultKey), 0755)
 		if err != nil {
-			color.Red("%sFailed to create default key store!", skm.CheckSymbol)
+			color.Red("%sFailed to create default key store!", skm.CrossSymbol)
 			return nil
 		}
 
@@ -65,7 +65,7 @@ func create(c *cli.Context) error {
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input key alias name!")
+		color.Red("%sPlease input key alias name!", skm.CrossSymbol)
 		return nil
 	}
 
@@ -143,7 +143,7 @@ func use(c *cli.Context) error {
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input key alias name!")
+		color.Red("%sPlease input key alias name!", skm.CrossSymbol)
 		return nil
 	}
 
@@ -246,7 +246,7 @@ func restore(c *cli.Context) error {
 	if c.NArg() > 0 {
 		filePath = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input the corrent backup file path!")
+		color.Red("%sPlease input the corrent backup file path!", skm.CrossSymbol)
 		return nil
 	}
 
@@ -263,7 +263,7 @@ func restore(c *cli.Context) error {
 	err = os.Mkdir(skm.StorePath, 0755)
 
 	if err != nil {
-		color.Red("%sFailed to initialize SSH key store!", skm.CheckSymbol)
+		color.Red("%sFailed to initialize SSH key store!", skm.CrossSymbol)
 		return nil
 	}
 
