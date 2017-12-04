@@ -29,6 +29,9 @@ const (
 	PrivateKey = "id_rsa"
 	// DefaultKey is the default alias name of SSH key
 	DefaultKey = "default"
+
+	// HookName is the name of a hook that is called when present after using a key
+	HookName = "hook"
 )
 
 var (
@@ -103,6 +106,14 @@ func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
 			color.Green("%sSSH key [%s] deleted!", CheckSymbol, alias)
 		} else {
 			color.Red("%sFailed to delete SSH key [%s]!", CrossSymbol, alias)
+		}
+	}
+}
+
+func RunHook(alias string) {
+	if info, err := os.Stat(filepath.Join(StorePath, alias, HookName)); !os.IsNotExist(err) {
+		if info.Mode() & 0111 != 0 {
+			Execute("", filepath.Join(StorePath, alias, HookName), alias)
 		}
 	}
 }
