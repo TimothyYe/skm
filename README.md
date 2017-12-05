@@ -24,6 +24,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Create, List, Delete your SSH key(s)
 * Manage all your SSH keys by alias names
 * Choose and set a default SSH key
+* Copy default SSH key to a remote host
 * Rename SSH key alias name
 * Backup and restore all your SSH keys
 
