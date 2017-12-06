@@ -4,8 +4,8 @@
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
-[3]: https://img.shields.io/badge/release-v0.3.3-brightgreen.svg
-[4]: https://github.com/TimothyYe/skm/releases
+[3]: http://github-release-version.herokuapp.com/github/timothyye/skm/release.svg?style=flat
+[4]: https://github.com/timothyye/skm/releases/latest
 [5]: https://img.shields.io/dub/l/vibe-d.svg
 [6]: LICENSE
 [7]: https://goreportcard.com/badge/github.com/timothyye/skm
