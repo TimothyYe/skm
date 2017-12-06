@@ -51,7 +51,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.3.3
+SKM V0.3.4
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -61,7 +61,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.3.3
+   0.3.4
 
 COMMANDS:
      init, i     Initialize SSH keys store for the first time usage.
@@ -198,6 +198,18 @@ x ./test/id_rsa.pub
 
 ✔  All SSH keys restored to /Users/timothy/.skm
 ```
+
+### Hook mechanism
+
+Edit and place a executable file named ```hook``` at the specified key directory, for example:
+
+```bash
+~/.skm/prod/hook
+```
+
+This hook file can be both an executable binary file or an executable script file.
+
+SKM will call this hook file after switching default SSH key to it, you can do some stuff in this hook file. 
 
 ## Licence
 
