@@ -154,7 +154,7 @@ func use(c *cli.Context) error {
 		// Construct prompt menu items
 		var names []string
 
-		for k, _ := range keyMap {
+		for k := range keyMap {
 			names = append(names, k)
 		}
 

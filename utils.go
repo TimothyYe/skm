@@ -110,9 +110,10 @@ func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
 	}
 }
 
+// RunHook runs hook file after switching SSH key
 func RunHook(alias string) {
 	if info, err := os.Stat(filepath.Join(StorePath, alias, HookName)); !os.IsNotExist(err) {
-		if info.Mode() & 0111 != 0 {
+		if info.Mode()&0111 != 0 {
 			Execute("", filepath.Join(StorePath, alias, HookName), alias)
 		}
 	}
