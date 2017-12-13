@@ -8,6 +8,7 @@ import (
 
 	"github.com/TimothyYe/skm"
 	"github.com/fatih/color"
+	"github.com/manifoldco/promptui"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -139,15 +140,41 @@ func list(c *cli.Context) error {
 
 func use(c *cli.Context) error {
 	var alias string
+	keyMap := skm.LoadSSHKeys()
 
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input key alias name!", skm.CrossSymbol)
-		return nil
+		templates := &promptui.SelectTemplates{
+			Active:   "{{ . | white | bgGreen }} ",
+			Inactive: "{{ . }} ",
+			Selected: "{{ . | bold }} ",
+		}
+
+		// Construct prompt menu items
+		var names []string
+
+		for k, _ := range keyMap {
+			names = append(names, k)
+		}
+
+		sort.Strings(names)
+
+		prompt := promptui.Select{
+			Label:     "Please select one SSH key",
+			Items:     names,
+			Templates: templates,
+		}
+
+		_, result, err := prompt.Run()
+
+		if err != nil {
+			return nil
+		}
+
+		alias = result
 	}
 
-	keyMap := skm.LoadSSHKeys()
 	_, ok := keyMap[alias]
 
 	if !ok {
