@@ -27,6 +27,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Copy default SSH key to a remote host
 * Rename SSH key alias name
 * Backup and restore all your SSH keys
+* Prompt UI for SSH key selection
 
 ## Installation
 
@@ -125,6 +126,13 @@ Your public key has been saved in /Users/timothy/.skm/prod/id_rsa.pub.
 % skm use dev
 Now using SSH key: dev
 ```
+
+### Prompt UI for key selection
+
+You can just type ```skm use```, then a prompt UI will help you to choose the right SSH key:
+
+![](https://github.com/TimothyYe/skm/blob/master/snapshots/prompt.gif?raw=true)
+
 ### Delete a SSH key
 
 ```bash
