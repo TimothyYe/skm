@@ -19,6 +19,7 @@ func initialize(c *cli.Context) error {
 
 		if err != nil {
 			color.Red("%sFailed to remove existing empty key store!", skm.CrossSymbol)
+			return nil
 		}
 	}
 
@@ -205,6 +206,7 @@ func delete(c *cli.Context) error {
 
 	if !ok {
 		color.Red("Key alias: %s doesn't exist!", alias)
+		return nil
 	}
 
 	// Set key with related alias as default used key
