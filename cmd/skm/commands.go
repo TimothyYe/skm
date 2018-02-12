@@ -56,6 +56,12 @@ func initCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "display",
+			Aliases: []string{"dp"},
+			Usage:   "Display the current SSH public key",
+			Action:  display,
+		},
+		{
 			Name:    "backup",
 			Aliases: []string{"b"},
 			Usage:   "Backup all SSH keys to an archive file",

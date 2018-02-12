@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -256,6 +257,18 @@ func copy(c *cli.Context) error {
 		color.Green("%s Current SSH key already copied to remote host", skm.CheckSymbol)
 	}
 
+	return nil
+}
+
+func display(c *cli.Context) error {
+
+	keyPath := skm.ParsePath(filepath.Join(skm.SSHPath, skm.PublicKey))
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		fmt.Println("Failed to read ", keyPath)
+	}
+	keyStr := string(key)
+	fmt.Print(keyStr)
 	return nil
 }
 
