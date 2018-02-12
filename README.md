@@ -65,16 +65,17 @@ VERSION:
    0.4
 
 COMMANDS:
-     init, i     Initialize SSH keys store for the first time usage.
-     create, c   Create a new SSH key.
-     ls, l       List all the available SSH keys
-     use, u      Set specific SSH key as default by its alias name
-     delete, d   Delete specific SSH key by alias name
-     rename, rn  Rename SSH key alias name to a new one
-     copy, cp    Copy current SSH public key to a remote host
-     backup, b   Backup all SSH keys to an archive file
-     restore, r  Restore SSH keys from an existing archive file
-     help, h     Shows a list of commands or help for one command
+     init, i      Initialize SSH keys store for the first time usage.
+     create, c    Create a new SSH key.
+     ls, l        List all the available SSH keys
+     use, u       Set specific SSH key as default by its alias name
+     delete, d    Delete specific SSH key by alias name
+     rename, rn   Rename SSH key alias name to a new one
+     copy, cp     Copy current SSH public key to a remote host
+		 display, dp  Display the current SSH public key
+     backup, b    Backup all SSH keys to an archive file
+     restore, r   Restore SSH keys from an existing archive file
+     help, h      Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
    --help, -h     show help
