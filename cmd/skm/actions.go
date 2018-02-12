@@ -85,7 +85,7 @@ func create(c *cli.Context) error {
 	err := os.Mkdir(filepath.Join(skm.StorePath, alias), 0755)
 
 	if err != nil {
-		color.Green("%sCreate SSH key failed!", skm.CheckSymbol)
+		color.Red("%sCreate SSH key failed!", skm.CrossSymbol)
 		return nil
 	}
 
