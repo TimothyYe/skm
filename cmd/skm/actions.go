@@ -131,15 +131,20 @@ func list(c *cli.Context) error {
 
 	for _, k := range keys {
 		key := keyMap[k]
+		keyDesc := ""
+
 		keyStr := strings.SplitAfterN(getKeyPayload(key.PublicKey), " ", 3)
+		if len(keyStr) >= 3 {
+			keyDesc = strings.TrimSpace(keyStr[2])
+		}
 		if key.IsDefault {
-			color.Green("->\t%s \t[%s]", k, strings.TrimSpace(keyStr[2]))
+			color.Green("->\t%s \t[%s]", k, keyDesc)
 		} else {
-			color.Blue("\t%s \t[%s]", k, strings.TrimSpace(keyStr[2]))
+			color.Blue("\t%s \t[%s]", k, keyDesc)
 		}
 	}
-
 	return nil
+
 }
 
 func use(c *cli.Context) error {
@@ -322,6 +327,7 @@ func getKeyPayload(keyPath string) string {
 	key, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		fmt.Println("Failed to read ", keyPath)
+		return ""
 	}
 	return string(key)
 }
