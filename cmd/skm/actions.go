@@ -138,9 +138,9 @@ func list(c *cli.Context) error {
 			keyDesc = strings.TrimSpace(keyStr[2])
 		}
 		if key.IsDefault {
-			color.Green("->\t%s \t[%s]", k, keyDesc)
+			color.Green("->\t%s\t[%s]", k, keyDesc)
 		} else {
-			color.Blue("\t%s \t[%s]", k, keyDesc)
+			color.Blue("\t%s\t[%s]", k, keyDesc)
 		}
 	}
 	return nil
