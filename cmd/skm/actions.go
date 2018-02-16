@@ -97,7 +97,7 @@ func create(c *cli.Context) error {
 	}
 
 	comment := c.String("C")
-	if bits != "" {
+	if comment != "" {
 		args = append(args, "-C")
 		args = append(args, comment)
 	}
