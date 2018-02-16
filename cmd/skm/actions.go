@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/TimothyYe/skm"
 	"github.com/fatih/color"
@@ -130,14 +131,20 @@ func list(c *cli.Context) error {
 
 	for _, k := range keys {
 		key := keyMap[k]
+		keyDesc := ""
+
+		keyStr := strings.SplitAfterN(getKeyPayload(key.PublicKey), " ", 3)
+		if len(keyStr) >= 3 {
+			keyDesc = strings.TrimSpace(keyStr[2])
+		}
 		if key.IsDefault {
-			color.Green("->\t%s", k)
+			color.Green("->\t%s \t[%s]", k, keyDesc)
 		} else {
-			color.Blue("\t%s", k)
+			color.Blue("\t%s \t[%s]", k, keyDesc)
 		}
 	}
-
 	return nil
+
 }
 
 func use(c *cli.Context) error {
@@ -261,14 +268,8 @@ func copy(c *cli.Context) error {
 }
 
 func display(c *cli.Context) error {
-
 	keyPath := skm.ParsePath(filepath.Join(skm.SSHPath, skm.PublicKey))
-	key, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		fmt.Println("Failed to read ", keyPath)
-	}
-	keyStr := string(key)
-	fmt.Print(keyStr)
+	fmt.Print(getKeyPayload(keyPath))
 	return nil
 }
 
@@ -320,4 +321,13 @@ func restore(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func getKeyPayload(keyPath string) string {
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		fmt.Println("Failed to read ", keyPath)
+		return ""
+	}
+	return string(key)
 }
