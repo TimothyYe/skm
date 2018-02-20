@@ -34,13 +34,6 @@ const (
 	HookName = "hook"
 )
 
-var (
-	// StorePath is the default SKM key path to store all the SSH keys
-	StorePath = filepath.Join(os.Getenv("HOME"), ".skm")
-	// SSHPath is the default SSH key path
-	SSHPath = filepath.Join(os.Getenv("HOME"), ".ssh")
-)
-
 // Execute executes shell commands with arguments
 func Execute(workDir, script string, args ...string) bool {
 	cmd := exec.Command(script, args...)
@@ -62,19 +55,21 @@ func Execute(workDir, script string, args ...string) bool {
 }
 
 // ClearKey clears both private & public keys from SSH key path
-func ClearKey() {
-	// Remove private key if exists
-	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
-	os.Remove(PrivateKeyPath)
+func ClearKey(env *Environment) {
+	for _, kt := range SupportedKeyTypes {
+		// Remove private key if exists
+		PrivateKeyPath := filepath.Join(env.SSHPath, kt.PrivateKey())
+		os.Remove(PrivateKeyPath)
 
-	// Remove public key if exists
-	PublicKeyPath := filepath.Join(SSHPath, PublicKey)
-	os.Remove(PublicKeyPath)
+		// Remove public key if exists
+		PublicKeyPath := filepath.Join(env.SSHPath, kt.PublicKey())
+		os.Remove(PublicKeyPath)
+	}
 }
 
 // DeleteKey delete key by its alias name
-func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
-	inUse := key.PrivateKey == ParsePath(filepath.Join(SSHPath, PrivateKey))
+func DeleteKey(alias string, key *SSHKey, env *Environment, forTest ...bool) {
+	inUse := key.PrivateKey == ParsePath(filepath.Join(env.SSHPath, key.PrivateKey))
 	var testMode bool
 	var input string
 
@@ -98,11 +93,11 @@ func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
 
 	if input == "y" {
 		if inUse {
-			ClearKey()
+			ClearKey(env)
 		}
 
 		//Remove specified key by alias name
-		if err := os.RemoveAll(filepath.Join(StorePath, alias)); err == nil {
+		if err := os.RemoveAll(filepath.Join(env.StorePath, alias)); err == nil {
 			color.Green("%sSSH key [%s] deleted!", CheckSymbol, alias)
 		} else {
 			color.Red("%sFailed to delete SSH key [%s]!", CrossSymbol, alias)
@@ -111,26 +106,31 @@ func DeleteKey(alias string, key *SSHKey, forTest ...bool) {
 }
 
 // RunHook runs hook file after switching SSH key
-func RunHook(alias string) {
-	if info, err := os.Stat(filepath.Join(StorePath, alias, HookName)); !os.IsNotExist(err) {
+func RunHook(alias string, env *Environment) {
+	if info, err := os.Stat(filepath.Join(env.StorePath, alias, HookName)); !os.IsNotExist(err) {
 		if info.Mode()&0111 != 0 {
-			Execute("", filepath.Join(StorePath, alias, HookName), alias)
+			Execute("", filepath.Join(env.StorePath, alias, HookName), alias)
 		}
 	}
 }
 
 // CreateLink creates symbol link for specified SSH key
-func CreateLink(alias string) {
-	ClearKey()
+func CreateLink(alias string, keyMap map[string]*SSHKey, env *Environment) {
+	ClearKey(env)
 
+	key, found := keyMap[alias]
+
+	if !found {
+		return
+	}
 	//Create symlink for private key
-	os.Symlink(filepath.Join(StorePath, alias, PrivateKey), filepath.Join(SSHPath, PrivateKey))
+	os.Symlink(filepath.Join(env.StorePath, alias, key.Type.PrivateKey()), filepath.Join(env.SSHPath, key.Type.PrivateKey()))
 
 	//Create symlink for public key
-	os.Symlink(filepath.Join(StorePath, alias, PublicKey), filepath.Join(SSHPath, PublicKey))
+	os.Symlink(filepath.Join(env.StorePath, alias, key.Type.PublicKey()), filepath.Join(env.SSHPath, key.Type.PublicKey()))
 }
 
-func loadSingleKey(keyPath string) *SSHKey {
+func loadSingleKey(keyPath string, env *Environment) *SSHKey {
 	key := &SSHKey{}
 
 	//Walkthrough SSH key store and load all the keys
@@ -152,10 +152,16 @@ func loadSingleKey(keyPath string) *SSHKey {
 			return nil
 		}
 
+		kt, ok := SupportedKeyTypes.GetByFilename(f.Name())
+		if !ok {
+			return nil
+		}
+		key.Type = &kt
+
 		//Check if key is in use
 		key.PrivateKey = path
 
-		if path == ParsePath(filepath.Join(SSHPath, PrivateKey)) {
+		if path == ParsePath(filepath.Join(env.SSHPath, kt.KeyBaseName)) {
 			key.IsDefault = true
 		}
 
@@ -196,22 +202,22 @@ func ParsePath(path string) string {
 }
 
 // LoadSSHKeys loads all the SSH keys from key store
-func LoadSSHKeys() map[string]*SSHKey {
+func LoadSSHKeys(env *Environment) map[string]*SSHKey {
 	keys := map[string]*SSHKey{}
 
 	//Walkthrough SSH key store and load all the keys
-	err := filepath.Walk(StorePath, func(path string, f os.FileInfo, err error) error {
+	err := filepath.Walk(env.StorePath, func(path string, f os.FileInfo, err error) error {
 		if f == nil {
 			return err
 		}
 
-		if path == StorePath {
+		if path == env.StorePath {
 			return nil
 		}
 
 		if f.IsDir() {
 			//Load private/public keys
-			key := loadSingleKey(path)
+			key := loadSingleKey(path, env)
 
 			if key != nil {
 				keys[f.Name()] = key

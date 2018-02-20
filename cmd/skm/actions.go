@@ -15,9 +15,10 @@ import (
 )
 
 func initialize(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	// Remove existing empty key store if exists
-	if _, err := skm.IsEmpty(skm.StorePath); !os.IsNotExist(err) {
-		err := os.Remove(skm.StorePath)
+	if _, err := skm.IsEmpty(env.StorePath); !os.IsNotExist(err) {
+		err := os.Remove(env.StorePath)
 
 		if err != nil {
 			color.Red("%sFailed to remove existing empty key store!", skm.CrossSymbol)
@@ -26,13 +27,13 @@ func initialize(c *cli.Context) error {
 	}
 
 	// Check the existence of key store
-	if _, err := os.Stat(skm.StorePath); !os.IsNotExist(err) {
+	if _, err := os.Stat(env.StorePath); !os.IsNotExist(err) {
 		color.Green("%sSSH key store already exists.", skm.CheckSymbol)
 		return nil
 	}
 
-	if _, err := os.Stat(skm.StorePath); os.IsNotExist(err) {
-		err := os.Mkdir(skm.StorePath, 0755)
+	if _, err := os.Stat(env.StorePath); os.IsNotExist(err) {
+		err := os.Mkdir(env.StorePath, 0755)
 
 		if err != nil {
 			color.Red("%sFailed to initialize SSH key store!", skm.CrossSymbol)
@@ -41,28 +42,36 @@ func initialize(c *cli.Context) error {
 	}
 
 	// Check & move existing keys into default folder
-	if _, err := os.Stat(filepath.Join(skm.SSHPath, skm.PrivateKey)); !os.IsNotExist(err) {
-		// Create alias directory
-		err := os.Mkdir(filepath.Join(skm.StorePath, skm.DefaultKey), 0755)
-		if err != nil {
-			color.Red("%sFailed to create default key store!", skm.CrossSymbol)
-			return nil
+	// TODO: Support different initial default keys
+	for _, kt := range skm.SupportedKeyTypes {
+		if _, err := os.Stat(filepath.Join(env.SSHPath, kt.PrivateKey())); !os.IsNotExist(err) {
+			// Create alias directory
+			err := os.Mkdir(filepath.Join(env.StorePath, skm.DefaultKey), 0755)
+			if err != nil {
+				color.Red("%sFailed to create default key store!", skm.CrossSymbol)
+				return nil
+			}
+
+			// Move key to default key store
+			os.Rename(filepath.Join(env.SSHPath, kt.PrivateKey()), filepath.Join(env.StorePath, skm.DefaultKey, kt.PrivateKey()))
+			os.Rename(filepath.Join(env.SSHPath, kt.PublicKey()), filepath.Join(env.StorePath, skm.DefaultKey, kt.PublicKey()))
+
+			// Once we have the old keys in place, we can load the key map.
+			keyMap := skm.LoadSSHKeys(env)
+
+			// Create symbol link
+			skm.CreateLink(skm.DefaultKey, keyMap, env)
+			break
 		}
-
-		// Move key to default key store
-		os.Rename(filepath.Join(skm.SSHPath, skm.PrivateKey), filepath.Join(skm.StorePath, skm.DefaultKey, skm.PrivateKey))
-		os.Rename(filepath.Join(skm.SSHPath, skm.PublicKey), filepath.Join(skm.StorePath, skm.DefaultKey, skm.PublicKey))
-
-		// Create symbol link
-		skm.CreateLink(skm.DefaultKey)
 	}
 
 	color.Green("%sSSH key store initialized!", skm.CheckSymbol)
-	color.Green("Key store location is: %s", skm.StorePath)
+	color.Green("Key store location is: %s", env.StorePath)
 	return nil
 }
 
 func create(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	var alias string
 	args := []string{}
 
@@ -74,7 +83,7 @@ func create(c *cli.Context) error {
 	}
 
 	// Check alias name existence
-	keyMap := skm.LoadSSHKeys()
+	keyMap := skm.LoadSSHKeys(env)
 
 	if len(keyMap) > 0 {
 		if _, ok := keyMap[alias]; ok {
@@ -84,17 +93,34 @@ func create(c *cli.Context) error {
 	}
 
 	// Create alias directory
-	err := os.Mkdir(filepath.Join(skm.StorePath, alias), 0755)
+	err := os.Mkdir(filepath.Join(env.StorePath, alias), 0755)
 
 	if err != nil {
 		color.Red("%sCreate SSH key failed!", skm.CrossSymbol)
 		return nil
 	}
 
-	bits := c.String("b")
-	if bits != "" {
-		args = append(args, "-b")
-		args = append(args, bits)
+	keyType := c.String("t")
+	if keyType == "" {
+		keyType = "rsa"
+	}
+	args = append(args, "-t")
+	args = append(args, keyType)
+
+	keyTypeSettings, ok := skm.SupportedKeyTypes[keyType]
+	if !ok {
+		color.Red("%s is not a supported key type.", keyType)
+		return nil
+	}
+
+	args = append(args, "-f")
+
+	if keyTypeSettings.SupportsVariableBitsize {
+		bits := c.String("b")
+		if bits != "" {
+			args = append(args, "-b")
+			args = append(args, bits)
+		}
 	}
 
 	comment := c.String("C")
@@ -103,8 +129,8 @@ func create(c *cli.Context) error {
 		args = append(args, comment)
 	}
 
-	args = append(args, "-f")
-	args = append(args, filepath.Join(skm.StorePath, alias, "id_rsa"))
+	fileName := keyTypeSettings.KeyBaseName
+	args = append(args, filepath.Join(env.StorePath, alias, fileName))
 
 	skm.Execute("", "ssh-keygen", args...)
 	color.Green("%sSSH key [%s] created!", skm.CheckSymbol, alias)
@@ -112,7 +138,8 @@ func create(c *cli.Context) error {
 }
 
 func list(c *cli.Context) error {
-	keyMap := skm.LoadSSHKeys()
+	env := mustGetEnvironment(c)
+	keyMap := skm.LoadSSHKeys(env)
 
 	if len(keyMap) == 0 {
 		color.Green("%s No SSH key found!", skm.CheckSymbol)
@@ -148,8 +175,9 @@ func list(c *cli.Context) error {
 }
 
 func use(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	var alias string
-	keyMap := skm.LoadSSHKeys()
+	keyMap := skm.LoadSSHKeys(env)
 
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
@@ -192,14 +220,15 @@ func use(c *cli.Context) error {
 	}
 
 	// Set key with related alias as default used key
-	skm.CreateLink(alias)
+	skm.CreateLink(alias, keyMap, env)
 	// Run a potential hook
-	skm.RunHook(alias)
+	skm.RunHook(alias, env)
 	color.Green("Now using SSH key: [%s]", alias)
 	return nil
 }
 
 func delete(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	var alias string
 
 	if c.NArg() > 0 {
@@ -209,7 +238,7 @@ func delete(c *cli.Context) error {
 		return nil
 	}
 
-	keyMap := skm.LoadSSHKeys()
+	keyMap := skm.LoadSSHKeys(env)
 	key, ok := keyMap[alias]
 
 	if !ok {
@@ -218,18 +247,19 @@ func delete(c *cli.Context) error {
 	}
 
 	// Set key with related alias as default used key
-	skm.DeleteKey(alias, key)
+	skm.DeleteKey(alias, key, env)
 	return nil
 }
 
 func rename(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	var alias, newAlias string
 
 	if c.NArg() == 2 {
 		alias = c.Args().Get(0)
 		newAlias = c.Args().Get(1)
 
-		err := os.Rename(filepath.Join(skm.StorePath, alias), filepath.Join(skm.StorePath, newAlias))
+		err := os.Rename(filepath.Join(env.StorePath, alias), filepath.Join(env.StorePath, newAlias))
 
 		if err == nil {
 			color.Green("%s SSH key [%s] renamed to [%s]", skm.CheckSymbol, alias, newAlias)
@@ -244,6 +274,7 @@ func rename(c *cli.Context) error {
 }
 
 func copy(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	host := c.Args().Get(0)
 	args := []string{}
 
@@ -253,7 +284,7 @@ func copy(c *cli.Context) error {
 		args = append(args, port)
 	}
 
-	keyPath := skm.ParsePath(filepath.Join(skm.SSHPath, skm.PrivateKey))
+	keyPath := skm.ParsePath(filepath.Join(env.SSHPath, skm.PrivateKey))
 	args = append(args, "-i")
 	args = append(args, keyPath)
 	args = append(args, host)
@@ -268,16 +299,23 @@ func copy(c *cli.Context) error {
 }
 
 func display(c *cli.Context) error {
-	keyPath := skm.ParsePath(filepath.Join(skm.SSHPath, skm.PublicKey))
-	fmt.Print(getKeyPayload(keyPath))
+	env := mustGetEnvironment(c)
+	for _, key := range skm.LoadSSHKeys(env) {
+		if key.IsDefault {
+			keyPath := skm.ParsePath(filepath.Join(env.SSHPath, key.Type.PublicKey()))
+			fmt.Print(getKeyPayload(keyPath))
+			return nil
+		}
+	}
 	return nil
 }
 
 func backup(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	fileName := skm.GetBakFileName()
 	dstFile := filepath.Join(os.Getenv("HOME"), fileName)
 
-	result := skm.Execute(skm.StorePath, "tar", "-czvf", dstFile, ".")
+	result := skm.Execute(env.StorePath, "tar", "-czvf", dstFile, ".")
 	if result {
 		color.Green("%s All SSH keys backup to: %s", skm.CheckSymbol, dstFile)
 	}
@@ -286,6 +324,7 @@ func backup(c *cli.Context) error {
 }
 
 func restore(c *cli.Context) error {
+	env := mustGetEnvironment(c)
 	var filePath string
 
 	if c.NArg() > 0 {
@@ -296,16 +335,16 @@ func restore(c *cli.Context) error {
 	}
 
 	// Clear the key store first
-	err := os.RemoveAll(skm.StorePath)
+	err := os.RemoveAll(env.StorePath)
 
 	if err != nil {
 		fmt.Println("Clear store path failed:", err.Error())
 	}
 
 	// Clear all keys
-	skm.ClearKey()
+	skm.ClearKey(env)
 
-	err = os.Mkdir(skm.StorePath, 0755)
+	err = os.Mkdir(env.StorePath, 0755)
 
 	if err != nil {
 		color.Red("%sFailed to initialize SSH key store!", skm.CrossSymbol)
@@ -313,11 +352,11 @@ func restore(c *cli.Context) error {
 	}
 
 	// Extract backup file
-	result := skm.Execute(skm.StorePath, "tar", "zxvf", filePath, "-C", skm.StorePath)
+	result := skm.Execute(env.StorePath, "tar", "zxvf", filePath, "-C", env.StorePath)
 
 	if result {
 		fmt.Println()
-		color.Green("%s All SSH keys restored to %s", skm.CheckSymbol, skm.StorePath)
+		color.Green("%s All SSH keys restored to %s", skm.CheckSymbol, env.StorePath)
 	}
 
 	return nil

@@ -98,7 +98,7 @@ SKM will create SSH key store at ```$HOME/.skm``` and put all the SSH keys in it
 __NOTE:__ If you already have id_rsa & id_rsa.pub key pairs in ```$HOME/.ssh```, SKM will move them to ```$HOME/.skm/default```
 
 ### Create a new SSH key
-__NOTE:__ Currently __ONLY__ RSA key type is supported!
+__NOTE:__ Currently __ONLY__ RSA and ED25519 keys are supported!
 
 ```bash
 skm create prod -C "abc@abc.com"

@@ -1,11 +1,44 @@
 package skm
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"math/rand"
 )
+
+var random *rand.Rand
+
+func init() {
+	source := rand.NewSource(time.Now().Unix())
+	random = rand.New(source)
+}
+
+func setupTestEnvironment(t *testing.T) *Environment {
+	testRoot := filepath.Join(os.TempDir(), fmt.Sprintf("skm-testsuite-%d", random.Int()))
+	sshPath := filepath.Join(testRoot, ".ssh")
+	storePath := filepath.Join(testRoot, ".skm")
+	os.RemoveAll(testRoot)
+	if err := os.MkdirAll(sshPath, 0700); err != nil {
+		t.Fatalf("Failed to create %s: %s", sshPath, err.Error())
+	}
+	if err := os.MkdirAll(storePath, 0700); err != nil {
+		t.Fatalf("Failed to create %s: %s", storePath, err.Error())
+	}
+	return &Environment{
+		SSHPath:   sshPath,
+		StorePath: storePath,
+	}
+}
+
+func tearDownTestEnvironment(t *testing.T, env *Environment) {
+	rootPath := filepath.Dir(env.SSHPath)
+	os.RemoveAll(rootPath)
+}
 
 func getHomeDir() string {
 	user, err := user.Current()
@@ -44,16 +77,15 @@ func TestParsePath(t *testing.T) {
 }
 
 func TestLoadSSHKeys(t *testing.T) {
-	if _, err := os.Stat(StorePath); os.IsNotExist(err) {
-		Execute("", "mkdir", "-p", StorePath)
-	}
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
 
 	// Create a test key
-	Execute("", "mkdir", filepath.Join(StorePath, "testkey123"))
-	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa"))
-	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa.pub"))
+	Execute("", "mkdir", filepath.Join(env.StorePath, "testkey123"))
+	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa"))
+	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa.pub"))
 
-	keyMap := LoadSSHKeys()
+	keyMap := LoadSSHKeys(env)
 
 	// Length of key map should greater than 0
 	if len(keyMap) == 0 {
@@ -61,74 +93,70 @@ func TestLoadSSHKeys(t *testing.T) {
 	}
 
 	// cleanup
-	os.RemoveAll(filepath.Join(StorePath, "testkey123"))
+	os.RemoveAll(filepath.Join(env.StorePath, "testkey123"))
 }
 
-// WARNING: Make sure to backup your SSH keys before running this test case
 func TestClearKey(t *testing.T) {
-	ClearKey()
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+	ClearKey(env)
 
-	PublicKeyPath := filepath.Join(SSHPath, PublicKey)
+	PublicKeyPath := filepath.Join(env.SSHPath, PublicKey)
 	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
 		t.Error("should public key should be removed")
 	}
 
-	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
+	PrivateKeyPath := filepath.Join(env.SSHPath, PrivateKey)
 	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
 		t.Error("should private key should be removed")
 	}
 }
 
 func TestDeleteKey(t *testing.T) {
-	if _, err := os.Stat(StorePath); os.IsNotExist(err) {
-		Execute("", "mkdir", "-p", StorePath)
-	}
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
 
 	//Create a test key
-	Execute("", "mkdir", filepath.Join(StorePath, "testkey123"))
-	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa"))
-	Execute("", "touch", filepath.Join(StorePath, "testkey123", "id_rsa.pub"))
+	Execute("", "mkdir", filepath.Join(env.StorePath, "testkey123"))
+	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa"))
+	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa.pub"))
 
 	//Construct a key
-	key := SSHKey{PrivateKey: filepath.Join(StorePath, "testkey123", "id_rsa"), PublicKey: filepath.Join(StorePath, "testkey123", "id_rsa.pub")}
+	key := SSHKey{PrivateKey: filepath.Join(env.StorePath, "testkey123", "id_rsa"), PublicKey: filepath.Join(env.StorePath, "testkey123", "id_rsa.pub")}
 	//Delete key
-	DeleteKey("testkey123", &key, true)
+	DeleteKey("testkey123", &key, env, true)
 
-	if _, err := os.Stat(filepath.Join(StorePath, "testkey123")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(env.StorePath, "testkey123")); !os.IsNotExist(err) {
 		t.Error("key should be deleted")
 	}
 }
 
 func TestLoadSingleKey(t *testing.T) {
-	sshPath := filepath.Join(getHomeDir(), ".sshtest")
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
 
-	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
-		Execute("", "mkdir", "-p", sshPath)
-	}
+	Execute("", "touch", filepath.Join(env.SSHPath, "id_rsa"))
+	Execute("", "touch", filepath.Join(env.SSHPath, "id_rsa.pub"))
 
-	Execute("", "touch", filepath.Join(sshPath, "id_rsa"))
-	Execute("", "touch", filepath.Join(sshPath, "id_rsa.pub"))
-
-	key := loadSingleKey(sshPath)
+	key := loadSingleKey(env.SSHPath, env)
 
 	if key == nil {
 		t.Error("key shouldn't be nil")
 	}
-
-	// cleanup
-	os.RemoveAll(sshPath)
 }
 
-// WARNING: Make sure to backup your SSH keys before running this test case
 func TestCreateLink(t *testing.T) {
-	CreateLink("abc")
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
 
-	PublicKeyPath := filepath.Join(SSHPath, PublicKey)
+	CreateLink("abc", nil, env)
+
+	PublicKeyPath := filepath.Join(env.SSHPath, PublicKey)
 	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
 		t.Error("should create symbol link for public key")
 	}
 
-	PrivateKeyPath := filepath.Join(SSHPath, PrivateKey)
+	PrivateKeyPath := filepath.Join(env.SSHPath, PrivateKey)
 	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
 		t.Error("should create symbol link for private key")
 	}
@@ -143,14 +171,9 @@ func TestGetBakFileName(t *testing.T) {
 }
 
 func TestIsEmpty(t *testing.T) {
-	skmPath := filepath.Join(getHomeDir(), ".skmtest")
-	os.RemoveAll(skmPath)
-
-	if _, err := os.Stat(skmPath); os.IsNotExist(err) {
-		Execute("", "mkdir", "-p", skmPath)
-	}
-
-	if ok, err := IsEmpty(skmPath); err != nil || !ok {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+	if ok, err := IsEmpty(env.StorePath); err != nil || !ok {
 		t.Error("directory should be empty")
 	}
 }
