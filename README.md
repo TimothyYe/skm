@@ -72,7 +72,7 @@ COMMANDS:
      delete, d    Delete specific SSH key by alias name
      rename, rn   Rename SSH key alias name to a new one
      copy, cp     Copy current SSH public key to a remote host
-		 display, dp  Display the current SSH public key
+     display, dp  Display the current SSH public key
      backup, b    Backup all SSH keys to an archive file
      restore, r   Restore SSH keys from an existing archive file
      help, h      Shows a list of commands or help for one command
