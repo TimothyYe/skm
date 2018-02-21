@@ -120,7 +120,7 @@ func tearDownEnvironment(t *testing.T, env *skm.Environment) {
 func assertFileExists(t *testing.T, path string, code string) {
 	_, err := os.Stat(path)
 	if err != nil {
-		t.Fatalf("[%s] Failed to assert file existance: %s (err: %v)", code, path, err)
+		t.Fatalf("[%s] Failed to assert file existence: %s (err: %v)", code, path, err)
 	}
 }
 

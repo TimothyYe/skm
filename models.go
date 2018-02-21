@@ -30,7 +30,7 @@ func (kt KeyType) PrivateKey() string {
 	return kt.KeyBaseName
 }
 
-// PrivateKey returns the filename used by a keytype for the public component.
+// PublicKey returns the filename used by a keytype for the public component.
 func (kt KeyType) PublicKey() string {
 	return fmt.Sprintf("%s.pub", kt.KeyBaseName)
 }
