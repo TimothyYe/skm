@@ -20,6 +20,7 @@ func initCommands() []cli.Command {
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "b", Usage: "bits"},
 				cli.StringFlag{Name: "C", Usage: "comment"},
+				cli.StringFlag{Name: "t", Usage: "type"},
 			},
 		},
 		{

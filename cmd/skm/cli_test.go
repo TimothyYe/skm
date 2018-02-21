@@ -3,10 +3,12 @@ package main
 import (
 	"os"
 	"os/exec"
+	"strconv"
 	"testing"
 )
 
 func TestUsage(t *testing.T) {
+	assertE2ETest(t)
 	prepareTest(t)
 	defer os.Remove("$GOPATH/bin/skm")
 	cmd := exec.Command("skm", "-h")
@@ -17,6 +19,7 @@ func TestUsage(t *testing.T) {
 }
 
 func TestInvalidArgs(t *testing.T) {
+	assertE2ETest(t)
 	prepareTest(t)
 	expectString := "No help topic for 'hogehoge'\n"
 	defer os.Remove("$GOPATH/bin/skm")
@@ -38,4 +41,11 @@ func runCmd(t *testing.T, cmd string, args ...string) []byte {
 		t.Fatalf("Expected %v, but %v: %v", nil, err, string(b))
 	}
 	return b
+}
+
+func assertE2ETest(t *testing.T) {
+	active, _ := strconv.ParseBool(os.Getenv("GOTEST_RUN_E2E"))
+	if !active {
+		t.Skip()
+	}
 }
