@@ -24,6 +24,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Create, List, Delete your SSH key(s)
 * Manage all your SSH keys by alias names
 * Choose and set a default SSH key
+* Display public key via alias name
 * Copy default SSH key to a remote host
 * Rename SSH key alias name
 * Backup and restore all your SSH keys
@@ -52,7 +53,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.5
+SKM V0.5.1
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -62,20 +63,20 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.5
+   0.5.1
 
 COMMANDS:
      init, i      Initialize SSH keys store for the first time usage.
      create, c    Create a new SSH key.
-     ls, l        List all the available SSH keys
-     use, u       Set specific SSH key as default by its alias name
-     delete, d    Delete specific SSH key by alias name
-     rename, rn   Rename SSH key alias name to a new one
-     copy, cp     Copy current SSH public key to a remote host
-     display, dp  Display the current SSH public key
-     backup, b    Backup all SSH keys to an archive file
-     restore, r   Restore SSH keys from an existing archive file
-     help, h      Shows a list of commands or help for one command
+     ls, l        List all the available SSH keys.
+     use, u       Set specific SSH key as default by its alias name.
+     delete, d    Delete specific SSH key by alias name.
+     rename, rn   Rename SSH key alias name to a new one.
+     copy, cp     Copy current SSH public key to a remote host.
+     display, dp  Display the current SSH public key or specific public key by alias name.
+     backup, b    Backup all SSH keys to an archive file.
+     restore, r   Restore SSH keys from an existing archive file.
+     help, h      Shows a list of commands or help for one command.
 
 GLOBAL OPTIONS:
    --help, -h     show help
@@ -133,6 +134,18 @@ Now using SSH key: dev
 You can just type ```skm use```, then a prompt UI will help you to choose the right SSH key:
 
 ![](https://github.com/TimothyYe/skm/blob/master/snapshots/prompt.gif?raw=true)
+
+### Display public key
+
+```bash
+% skm display
+```
+
+Or display specific SSH public key by alias name:
+
+```bash
+% skm display prod
+```
 
 ### Delete a SSH key
 
