@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -300,13 +301,26 @@ func copy(c *cli.Context) error {
 
 func display(c *cli.Context) error {
 	env := mustGetEnvironment(c)
-	for _, key := range skm.LoadSSHKeys(env) {
-		if key.IsDefault {
-			keyPath := skm.ParsePath(filepath.Join(env.SSHPath, key.Type.PublicKey()))
-			fmt.Print(getKeyPayload(keyPath))
+	keys := skm.LoadSSHKeys(env)
+
+	if c.NArg() > 0 {
+		alias := c.Args().Get(0)
+		if key, exists := keys[alias]; exists {
+			fmt.Print(getKeyPayload(key.PublicKey))
 			return nil
+		} else {
+			return errors.New("Key alias not found")
+		}
+	} else {
+		for _, key := range keys {
+			if key.IsDefault {
+				keyPath := skm.ParsePath(filepath.Join(env.SSHPath, key.Type.PublicKey()))
+				fmt.Print(getKeyPayload(keyPath))
+				return nil
+			}
 		}
 	}
+
 	return nil
 }
 
