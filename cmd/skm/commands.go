@@ -59,7 +59,7 @@ func initCommands() []cli.Command {
 		{
 			Name:    "display",
 			Aliases: []string{"dp"},
-			Usage:   "Display the current SSH public key",
+			Usage:   "Display the current SSH public key or specific SSH public key by alias name",
 			Action:  display,
 		},
 		{
