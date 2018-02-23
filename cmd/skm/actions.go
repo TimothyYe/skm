@@ -115,6 +115,8 @@ func create(c *cli.Context) error {
 	}
 
 	args = append(args, "-f")
+	fileName := keyTypeSettings.KeyBaseName
+	args = append(args, filepath.Join(env.StorePath, alias, fileName))
 
 	if keyTypeSettings.SupportsVariableBitsize {
 		bits := c.String("b")
@@ -129,9 +131,6 @@ func create(c *cli.Context) error {
 		args = append(args, "-C")
 		args = append(args, comment)
 	}
-
-	fileName := keyTypeSettings.KeyBaseName
-	args = append(args, filepath.Join(env.StorePath, alias, fileName))
 
 	skm.Execute("", "ssh-keygen", args...)
 	color.Green("%sSSH key [%s] created!", skm.CheckSymbol, alias)
