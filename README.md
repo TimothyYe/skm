@@ -233,6 +233,22 @@ This hook file can be both an executable binary file or an executable script fil
 
 SKM will call this hook file after switching default SSH key to it, you can do some stuff in this hook file. 
 
+For example, if you want to use different git username & email after you switch to use a different SSH key, you can create one hook file, and put shell commands in it:
+
+```bash
+#!/bin/bash
+git config --global user.name "YourNewName"
+git config --global user.email "YourNewEmail@example.com"
+```
+
+Then make this hook file executable:
+
+```bash
+chmod +x hook
+```
+
+SKM will call this hook file and change git global settings for you!
+
 ## Licence
 
 [MIT License](https://github.com/TimothyYe/skm/blob/master/LICENSE)
