@@ -30,7 +30,10 @@ func TestKeyTypeRegistry(t *testing.T) {
 			t.Fatalf("%s should have returned %v, but got %v instead", testcase.input, testcase.found, found)
 		}
 		if kt.Name != testcase.name {
-			t.Fatalf("%s should have returned %v, but got %v instead", testcase.input, testcase.name, kt.Name)
+			t.Fatalf("%s should have returned %v, but got %v instead",
+				testcase.input,
+				testcase.name,
+				kt.Name)
 		}
 	}
 }

@@ -1,0 +1,17 @@
+{
+  "Deadline": "2m",
+  "Enable": [
+    "goimports",
+    "golint",
+    "ineffassign",
+    "misspell",
+    "vet",
+    "megacheck",
+    "varcheck",
+    "deadcode",
+    "structcheck"
+  ],
+  "Exclude": [
+    "snapshots/"
+  ]
+}

@@ -7,3 +7,8 @@ install:
  - go get -v github.com/smartystreets/goconvey
  - go get -v gopkg.in/urfave/cli.v1
  - go get -v github.com/manifoldco/promptui
+ - go get -u github.com/alecthomas/gometalinter
+script:
+ - gometalinter --install
+ - gometalinter --config=./gometalinter.json --vendor ./...
+ - go test -v ./...

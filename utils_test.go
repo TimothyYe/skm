@@ -3,7 +3,6 @@ package skm
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"testing"
 	"time"
@@ -38,14 +37,6 @@ func setupTestEnvironment(t *testing.T) *Environment {
 func tearDownTestEnvironment(t *testing.T, env *Environment) {
 	rootPath := filepath.Dir(env.SSHPath)
 	os.RemoveAll(rootPath)
-}
-
-func getHomeDir() string {
-	user, err := user.Current()
-	if nil == err && user.HomeDir != "" {
-		return user.HomeDir
-	}
-	return os.Getenv("HOME")
 }
 
 func TestExecute(t *testing.T) {
