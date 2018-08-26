@@ -1,11 +1,9 @@
 ![](https://raw.githubusercontent.com/TimothyYe/skm/master/snapshots/skm.png)
 
-[![Release][3]][4] [![MIT licensed][5]][6] [![Build Status][1]][2] [![Go Report Card][7]][8] [![GoCover.io][11]][12] [![GoDoc][9]][10]
+[![MIT licensed][5]][6] [![Build Status][1]][2] [![Go Report Card][7]][8] [![GoCover.io][11]][12] [![GoDoc][9]][10]
 
 [1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
 [2]: https://travis-ci.org/TimothyYe/skm
-[3]: http://github-release-version.herokuapp.com/github/timothyye/skm/release.svg?style=flat
-[4]: https://github.com/timothyye/skm/releases/latest
 [5]: https://img.shields.io/dub/l/vibe-d.svg
 [6]: LICENSE
 [7]: https://goreportcard.com/badge/github.com/timothyye/skm
