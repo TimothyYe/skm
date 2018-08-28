@@ -93,6 +93,16 @@ func create(c *cli.Context) error {
 		}
 	}
 
+	// Remove existing empty alias directory if exists
+	if _, err := skm.IsEmpty(filepath.Join(env.StorePath, alias)); !os.IsNotExist(err) {
+		err := os.Remove(filepath.Join(env.StorePath, alias))
+
+		if err != nil {
+			color.Red("%sFailed to remove existing empty alias directory!", skm.CrossSymbol)
+			return nil
+		}
+	}
+
 	// Create alias directory
 	err := os.Mkdir(filepath.Join(env.StorePath, alias), 0755)
 
