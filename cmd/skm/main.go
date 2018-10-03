@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/TimothyYe/skm"
@@ -28,6 +29,11 @@ func main() {
 			Value: defaultSSHPath,
 			Usage: "Path to a .ssh folder",
 		},
+		cli.StringFlag{
+			Name:  "restic-path",
+			Value: "",
+			Usage: "Path to the restic binary",
+		},
 	}
 	app.Name = skm.Name
 	app.Usage = skm.Usage
@@ -39,12 +45,17 @@ func main() {
 func mustGetEnvironment(ctx *cli.Context) *skm.Environment {
 	storePath := ctx.GlobalString("store-path")
 	sshPath := ctx.GlobalString("ssh-path")
+	resticPath := ctx.GlobalString("restic-path")
 	if storePath == "" || sshPath == "" {
 		log.Fatalf("store-path (%v) and ssh-path (%v) have to be set!", storePath, sshPath)
 	}
+	if resticPath == "" {
+		resticPath, _ = exec.LookPath("restic")
+	}
 	return &skm.Environment{
-		StorePath: storePath,
-		SSHPath:   sshPath,
+		StorePath:  storePath,
+		SSHPath:    sshPath,
+		ResticPath: resticPath,
 	}
 }
 

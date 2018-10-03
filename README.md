@@ -199,6 +199,27 @@ a ./test/id_rsa.pub
 ✔  All SSH keys backup to: /Users/timothy/skm-20171016170707.tar
 ```
 
+If you have [restic](https://restic.net/) installed then you can also use that
+to create backups of your SKM store:
+
+```bash
+# First, you need a password for your repository
+% if [[ ! -f ~/.skm-backups.passwd ]]; then
+%     openssl rand -hex 64 > ~/.skm-backups.passwd
+% fi
+
+% skm backup --restic
+repository ... opened successfully, password is correct
+
+Files:           0 new,     1 changed,     4 unmodified
+Dirs:            0 new,     0 changed,     0 unmodified
+Added to the repo: 1.179 KiB
+
+processed 5 files, 2.593 KiB in 0:00
+snapshot $SNAPSHOT saved
+✔  Backup to /Users/$USER/.skm-backups complete
+```
+
 ### Restore SSH keys
 
 ```bash
@@ -217,6 +238,16 @@ x ./test/id_rsa
 x ./test/id_rsa.pub
 
 ✔  All SSH keys restored to /Users/timothy/.skm
+```
+
+Again, SKM also supports [restic](https://restic.net/) to create and restore
+backups:
+
+```bash
+% skm restore --restic --restic-snapshot $SNAPSHOT
+repository $REPO opened successfully, password is correct
+restoring <Snapshot $SNAPSHOT of [/Users/$USER/.skm] at 2018-10-03 19:40:33.333130348 +0200 CEST by $USER@$HOST> to /Users/$USER/.skm
+✔  Backup restored to /Users/$USER/.skm
 ```
 
 ### Hook mechanism

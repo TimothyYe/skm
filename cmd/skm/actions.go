@@ -334,6 +334,16 @@ func display(c *cli.Context) error {
 
 func backup(c *cli.Context) error {
 	env := mustGetEnvironment(c)
+	if c.Bool("restic") {
+		mustHaveRestic(env)
+		resticCfg := mustLoadOrCreateResticSettings(env, c)
+		ensureInitializedResticRepo(resticCfg, env)
+		result := skm.Execute(env.StorePath, env.ResticPath, "backup", ".", "--password-file", resticCfg.PasswordFile, "--repo", resticCfg.Repository)
+		if result {
+			color.Green("%s Backup to %s complete", skm.CheckSymbol, resticCfg.Repository)
+		}
+		return nil
+	}
 	fileName := skm.GetBakFileName()
 	dstFile := filepath.Join(os.Getenv("HOME"), fileName)
 
@@ -347,6 +357,22 @@ func backup(c *cli.Context) error {
 
 func restore(c *cli.Context) error {
 	env := mustGetEnvironment(c)
+	if c.Bool("restic") {
+		mustHaveRestic(env)
+		resticCfg := mustLoadOrCreateResticSettings(env, c)
+		ensureInitializedResticRepo(resticCfg, env)
+		if c.String("restic-snapshot") == "" {
+			fmt.Fprintf(os.Stderr, "No snapshot specified. The following snapshots are available:\n\n")
+			skm.Execute(env.StorePath, env.ResticPath, "snapshots", "--password-file", resticCfg.PasswordFile, "--repo", resticCfg.Repository)
+			fmt.Fprintln(os.Stderr, "")
+			skm.Fatalf("Please specify a snapshot\n")
+		}
+		result := skm.Execute(env.StorePath, env.ResticPath, "restore", c.String("restic-snapshot"), "--target", env.StorePath, "--password-file", resticCfg.PasswordFile, "--repo", resticCfg.Repository)
+		if result {
+			color.Green("%s Backup restored to %s", skm.CheckSymbol, env.StorePath)
+		}
+		return nil
+	}
 	var filePath string
 
 	if c.NArg() > 0 {

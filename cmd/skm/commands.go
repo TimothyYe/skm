@@ -67,12 +67,19 @@ func initCommands() []cli.Command {
 			Aliases: []string{"b"},
 			Usage:   "Backup all SSH keys to an archive file",
 			Action:  backup,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "restic", Usage: "Use restic to generate backup"},
+			},
 		},
 		{
 			Name:    "restore",
 			Aliases: []string{"r"},
 			Usage:   "Restore SSH keys from an existing archive file",
 			Action:  restore,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "restic", Usage: "Use restic to generate backup"},
+				cli.StringFlag{Name: "restic-snapshot", Usage: "The snapshot to be restored"},
+			},
 		},
 	}
 }

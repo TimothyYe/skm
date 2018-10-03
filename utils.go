@@ -253,3 +253,9 @@ func IsEmpty(path string) (bool, error) {
 	}
 	return false, err
 }
+
+func Fatalf(format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	color.New(color.FgRed).Fprintf(os.Stderr, "%s %s", CrossSymbol, msg)
+	os.Exit(1)
+}
