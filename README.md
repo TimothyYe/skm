@@ -51,7 +51,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.5.3
+SKM V0.6
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -61,7 +61,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.5.3
+   0.6
 
 COMMANDS:
      init, i      Initialize SSH keys store for the first time usage.
