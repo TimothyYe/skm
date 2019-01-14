@@ -81,5 +81,10 @@ func initCommands() []cli.Command {
 				cli.StringFlag{Name: "restic-snapshot", Usage: "The snapshot to be restored"},
 			},
 		},
+		{
+			Name:   "env",
+			Usage:  "Get and set environment variables for SKM",
+			Action: env,
+		},
 	}
 }

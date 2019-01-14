@@ -410,6 +410,11 @@ func restore(c *cli.Context) error {
 	return nil
 }
 
+func env(c *cli.Context) error {
+	// host := c.Args().Get(0)
+	return nil
+}
+
 func getKeyPayload(keyPath string) string {
 	key, err := ioutil.ReadFile(keyPath)
 	if err != nil {
