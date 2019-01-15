@@ -1,7 +1,6 @@
 {
   "Deadline": "2m",
   "Enable": [
-    "goimports",
     "golint",
     "ineffassign",
     "misspell",
