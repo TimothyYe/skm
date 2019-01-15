@@ -410,6 +410,37 @@ func restore(c *cli.Context) error {
 	return nil
 }
 
+func cache(c *cli.Context) error {
+	alias := c.Args().Get(0)
+	env := mustGetEnvironment(c)
+	keyMap := skm.LoadSSHKeys(env)
+
+	if c.Bool("add") {
+		// add SSH key into SSH agent cache
+		if err := skm.AddCache(alias, keyMap, env); err != nil {
+			color.Red("%s"+err.Error(), skm.CrossSymbol)
+			return nil
+		}
+		color.Green("%s SSH key [%s] already added into cache", skm.CheckSymbol, alias)
+	} else if c.Bool("del") {
+		// delete SSH key from SSH agent cache
+		if err := skm.DeleteCache(alias, keyMap, env); err != nil {
+			color.Red("%s"+err.Error(), skm.CrossSymbol)
+			return nil
+		}
+		color.Green("%s SSH key [%s] removed from cache", skm.CheckSymbol, alias)
+	} else if c.Bool("list") {
+		// list all cached SSH keys from SSH agent cache
+		if err := skm.ListCache(); err != nil {
+			return nil
+		}
+	} else {
+		color.Red("%s Invalid parameter!", skm.CrossSymbol)
+		return errors.New("invalid parameter")
+	}
+	return nil
+}
+
 func getKeyPayload(keyPath string) string {
 	key, err := ioutil.ReadFile(keyPath)
 	if err != nil {
