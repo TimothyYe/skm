@@ -120,7 +120,7 @@ func AddCache(alias string, keyMap map[string]*SSHKey, env *Environment) error {
 	key, found := keyMap[alias]
 
 	if !found {
-		return errors.New(fmt.Sprintf("SSH key [%s] not found", alias))
+		return fmt.Errorf("SSH key [%s] not found", alias)
 	}
 
 	// Add key to SSH agent cache
@@ -140,7 +140,7 @@ func DeleteCache(alias string, keyMap map[string]*SSHKey, env *Environment) erro
 	key, found := keyMap[alias]
 
 	if !found {
-		return errors.New(fmt.Sprintf("SSH key [%s] not found", alias))
+		return fmt.Errorf("SSH key [%s] not found", alias)
 	}
 
 	// Remove key from SSH agent cache
