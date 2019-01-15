@@ -51,7 +51,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.6
+SKM V0.7
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -61,7 +61,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.6
+   0.7
 
 COMMANDS:
      init, i      Initialize SSH keys store for the first time usage.
@@ -74,11 +74,15 @@ COMMANDS:
      display, dp  Display the current SSH public key or specific SSH public key by alias name.
      backup, b    Backup all SSH keys to an archive file.
      restore, r   Restore SSH keys from an existing archive file.
+     cache        Add your SSH to SSH agent cache via alias name.
      help, h      Shows a list of commands or help for one command.
 
 GLOBAL OPTIONS:
-   --help, -h     show help
-   --version, -v  print the version
+   --store-path value   Path where SKM should store its profiles (default: "/Users/timothy/.skm")
+   --ssh-path value     Path to a .ssh folder (default: "/Users/timothy/.ssh")
+   --restic-path value  Path to the restic binary
+   --help, -h           show help
+   --version, -v        print the version
 ```
 
 ### For the first time use
@@ -248,6 +252,37 @@ backups:
 repository $REPO opened successfully, password is correct
 restoring <Snapshot $SNAPSHOT of [/Users/$USER/.skm] at 2018-10-03 19:40:33.333130348 +0200 CEST by $USER@$HOST> to /Users/$USER/.skm
 ✔  Backup restored to /Users/$USER/.skm
+```
+
+### Integrate with SSH agent
+
+You can use `cache` command to cache your SSH key into SSH agent's cache via SSH alias name.
+
+__Cache your SSH key__  
+
+```bash
+λ tim [~/]
+→ skm cache --add my                                                                                                                                                                                                                                                                     
+Enter passphrase for /Users/timothy/.skm/my/id_rsa:
+Identity added: /Users/timothy/.skm/my/id_rsa (/Users/timothy/.skm/my/id_rsa)
+✔  SSH key [my] already added into cache
+```
+
+__Remove your SSH key from cache__  
+
+```bash
+λ tim [~/]
+→ ./skm cache --del my                                                                                                                                                                                                                                                                   
+Identity removed: /Users/timothy/.skm/my/id_rsa (MyKEY)
+✔  SSH key [my] removed from cache
+```
+
+__List your cached SSH keys from SSH agent__  
+
+```bash
+λ tim [skm/cmd/skm] at  cache !
+→ ./skm cache --list                                                                                                                                                                                                                                                                     
+2048 SHA256:qAVcwc0tdUOCjH3sTskwxAmfMQiL2sKtfPBXFnUoZHQ /Users/timothy/.skm/my/id_rsa (RSA)
 ```
 
 ### Hook mechanism

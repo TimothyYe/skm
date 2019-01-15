@@ -81,5 +81,15 @@ func initCommands() []cli.Command {
 				cli.StringFlag{Name: "restic-snapshot", Usage: "The snapshot to be restored"},
 			},
 		},
+		{
+			Name:   "cache",
+			Usage:  "Add your SSH to SSH agent cache via alias name",
+			Action: cache,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "add", Usage: "Add SSH key to SSH agent cache"},
+				cli.BoolFlag{Name: "del", Usage: "Remove SSH key from SSH agent cache"},
+				cli.BoolFlag{Name: "list", Usage: "List all SSH keys from SSH agent cache"},
+			},
+		},
 	}
 }

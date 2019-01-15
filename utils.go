@@ -1,6 +1,7 @@
 package skm
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -112,6 +113,58 @@ func RunHook(alias string, env *Environment) {
 			Execute("", filepath.Join(env.StorePath, alias, HookName), alias)
 		}
 	}
+}
+
+// AddCache adds SSH to ssh agent cache via key alias
+func AddCache(alias string, keyMap map[string]*SSHKey, env *Environment) error {
+	key, found := keyMap[alias]
+
+	if !found {
+		return errors.New(fmt.Sprintf("SSH key [%s] not found", alias))
+	}
+
+	// Add key to SSH agent cache
+	privateKeyPath := filepath.Join(env.StorePath, alias, key.Type.PrivateKey())
+	args := []string{privateKeyPath}
+	result := Execute("", "ssh-add", args...)
+
+	if !result {
+		return errors.New("Failed to remove SSH key from cache")
+	}
+
+	return nil
+}
+
+// DeleteCache removes SSH key from SSH agent cache via key alias
+func DeleteCache(alias string, keyMap map[string]*SSHKey, env *Environment) error {
+	key, found := keyMap[alias]
+
+	if !found {
+		return errors.New(fmt.Sprintf("SSH key [%s] not found", alias))
+	}
+
+	// Remove key from SSH agent cache
+	privateKeyPath := filepath.Join(env.StorePath, alias, key.Type.PrivateKey())
+	args := []string{"-d", privateKeyPath}
+	result := Execute("", "ssh-add", args...)
+
+	if !result {
+		return errors.New("Failed to remove SSH key from cache")
+	}
+
+	return nil
+}
+
+// ListCache lists cached SSH key from SSH agent cache
+func ListCache() error {
+	args := []string{"-l"}
+	result := Execute("", "ssh-add", args...)
+
+	if !result {
+		return errors.New("Failed to list SSH keys from cache")
+	}
+
+	return nil
 }
 
 // CreateLink creates symbol link for specified SSH key
