@@ -280,7 +280,7 @@ Identity removed: /Users/timothy/.skm/my/id_rsa (MyKEY)
 __List your cached SSH keys from SSH agent__  
 
 ```bash
-λ tim [skm/cmd/skm] at  cache !
+λ tim [~/]
 → ./skm cache --list                                                                                                                                                                                                                                                                     
 2048 SHA256:qAVcwc0tdUOCjH3sTskwxAmfMQiL2sKtfPBXFnUoZHQ /Users/timothy/.skm/my/id_rsa (RSA)
 ```
