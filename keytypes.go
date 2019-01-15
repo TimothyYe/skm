@@ -21,13 +21,13 @@ var SupportedKeyTypes KeyTypeRegistry
 func init() {
 	SupportedKeyTypes = KeyTypeRegistry{}
 	SupportedKeyTypes["rsa"] = KeyType{
-		Name: "rsa",
+		Name:                    "rsa",
 		SupportsVariableBitsize: true,
 		KeyBaseName:             "id_rsa",
 	}
 
 	SupportedKeyTypes["ed25519"] = KeyType{
-		Name: "ed25519",
+		Name:                    "ed25519",
 		SupportsVariableBitsize: true,
 		KeyBaseName:             "id_ed25519",
 	}
