@@ -5,7 +5,6 @@ go:
  - 1.10.x
  - 1.11.4
 install:
- - go get -v github.com/smartystreets/goconvey
  - go get -u github.com/alecthomas/gometalinter
 script:
  - gometalinter --install
