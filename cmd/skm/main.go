@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -39,7 +40,9 @@ func main() {
 	app.Usage = skm.Usage
 	app.Version = Version
 	app.Commands = initCommands()
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		fmt.Println("Failed to run skm:", err)
+	}
 }
 
 func mustGetEnvironment(ctx *cli.Context) *skm.Environment {

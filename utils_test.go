@@ -59,7 +59,9 @@ func TestParsePath(t *testing.T) {
 	}
 
 	// parse symbol link
-	os.Symlink("/etc/passwd", "/tmp/passwd")
+	if err := os.Symlink("/etc/passwd", "/tmp/passwd"); err != nil {
+		t.Error("failed to parse symbol link")
+	}
 	path = ParsePath("/tmp/passwd")
 
 	if path != "/etc/passwd" {

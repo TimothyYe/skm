@@ -177,10 +177,16 @@ func CreateLink(alias string, keyMap map[string]*SSHKey, env *Environment) {
 		return
 	}
 	//Create symlink for private key
-	os.Symlink(filepath.Join(env.StorePath, alias, key.Type.PrivateKey()), filepath.Join(env.SSHPath, key.Type.PrivateKey()))
+	if err := os.Symlink(filepath.Join(env.StorePath, alias, key.Type.PrivateKey()), filepath.Join(env.SSHPath, key.Type.PrivateKey())); err != nil {
+		fmt.Println("Failed to create symble link for private key")
+		return
+	}
 
 	//Create symlink for public key
-	os.Symlink(filepath.Join(env.StorePath, alias, key.Type.PublicKey()), filepath.Join(env.SSHPath, key.Type.PublicKey()))
+	if err := os.Symlink(filepath.Join(env.StorePath, alias, key.Type.PublicKey()), filepath.Join(env.SSHPath, key.Type.PublicKey())); err != nil {
+		fmt.Println("Failed to create symble link for private key")
+		return
+	}
 }
 
 func loadSingleKey(keyPath string, env *Environment) *SSHKey {

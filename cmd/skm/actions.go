@@ -54,8 +54,12 @@ func initialize(c *cli.Context) error {
 			}
 
 			// Move key to default key store
-			os.Rename(filepath.Join(env.SSHPath, kt.PrivateKey()), filepath.Join(env.StorePath, skm.DefaultKey, kt.PrivateKey()))
-			os.Rename(filepath.Join(env.SSHPath, kt.PublicKey()), filepath.Join(env.StorePath, skm.DefaultKey, kt.PublicKey()))
+			if err := os.Rename(filepath.Join(env.SSHPath, kt.PrivateKey()), filepath.Join(env.StorePath, skm.DefaultKey, kt.PrivateKey())); err != nil {
+				color.Red("%sFailed to move key to default key store")
+			}
+			if err := os.Rename(filepath.Join(env.SSHPath, kt.PublicKey()), filepath.Join(env.StorePath, skm.DefaultKey, kt.PublicKey())); err != nil {
+				color.Red("%sFailed to move key to default key store")
+			}
 
 			// Once we have the old keys in place, we can load the key map.
 			keyMap := skm.LoadSSHKeys(env)
