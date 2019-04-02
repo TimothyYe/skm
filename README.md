@@ -315,4 +315,5 @@ SKM will call this hook file and change git global settings for you!
 
 ## Licence
 
-[MIT License](https://github.com/TimothyYe/skm/blob/master/LICENSE)
+[MIT License](https://github.com/TimothyYe/skm/blob/master/LICENSE)  
+[996ICU License](https://github.com/lxlxw/996.TSC/blob/master/LICENSE)
