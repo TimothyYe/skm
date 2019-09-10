@@ -15,6 +15,13 @@ import (
 var defaultStorePath = filepath.Join(os.Getenv("HOME"), ".skm")
 var defaultSSHPath = filepath.Join(os.Getenv("HOME"), ".ssh")
 
+func init() {
+	// initialize the store path
+	if envStorePath := os.Getenv("SKM_STORE_PATH"); envStorePath != "" {
+		defaultStorePath = envStorePath
+	}
+}
+
 func main() {
 	parseArgs()
 

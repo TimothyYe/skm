@@ -27,6 +27,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Rename SSH key alias name
 * Backup and restore all your SSH keys
 * Prompt UI for SSH key selection
+* Customized SSH key store path
 
 ## Installation
 
@@ -283,6 +284,15 @@ __List your cached SSH keys from SSH agent__
 λ tim [~/]
 → ./skm cache --list                                                                                                                                                                                                                                                                     
 2048 SHA256:qAVcwc0tdUOCjH3sTskwxAmfMQiL2sKtfPBXFnUoZHQ /Users/timothy/.skm/my/id_rsa (RSA)
+```
+
+### Customized SSH key store path
+
+By default, SKM uses `$HOME/.skm` as the default path of SSH key store.
+You can define your customized in your `~/.bashrc` or `~/.zshrc` by adding:
+
+```bash
+SKM_STORE_PATH=/usr/local/.skm
 ```
 
 ### Hook mechanism
