@@ -393,19 +393,30 @@ func restore(c *cli.Context) error {
 		fmt.Println("Clear store path failed:", err.Error())
 	}
 
+	// Extract backup file
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		color.Red("%sFailed to get the file path!", skm.CrossSymbol)
+	}
+
+	var confirm string
+	color.Green("This operation will overwrite all you current SSH keys, please make sure you want to do this operation?")
+	fmt.Print("(Y/n):")
+	fmt.Scan(&confirm)
+
+	if confirm != "Y" {
+		os.Exit(0)
+	}
+
 	// Clear all keys
 	skm.ClearKey(env)
-
 	err = os.Mkdir(env.StorePath, 0755)
-
 	if err != nil {
 		color.Red("%sFailed to initialize SSH key store!", skm.CrossSymbol)
 		return nil
 	}
 
-	// Extract backup file
-	result := skm.Execute(env.StorePath, "tar", "zxvf", filePath, "-C", env.StorePath)
-
+	result := skm.Execute(env.StorePath, "tar", "zxvf", absPath, "-C", env.StorePath)
 	if result {
 		fmt.Println()
 		color.Green("%s All SSH keys restored to %s", skm.CheckSymbol, env.StorePath)
