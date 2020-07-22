@@ -52,7 +52,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.7
+SKM V0.8.1
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -62,7 +62,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.7
+   0.8.1
 
 COMMANDS:
      init, i      Initialize SSH keys store for the first time usage.
