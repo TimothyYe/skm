@@ -6,7 +6,7 @@ import (
 
 var (
 	// Version is the default version of SKM
-	Version = "0.5"
+	Version = "0.8.1"
 	logo    = `
 
 ███████╗██╗  ██╗███╗   ███╗
