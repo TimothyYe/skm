@@ -11,9 +11,9 @@ import (
 
 	cli "gopkg.in/urfave/cli.v1"
 )
-
-var defaultStorePath = filepath.Join(os.Getenv("HOME"), ".skm")
-var defaultSSHPath = filepath.Join(os.Getenv("HOME"), ".ssh")
+var home,_ = os.UserHomeDir();
+var defaultStorePath = filepath.Join(home, ".skm")
+var defaultSSHPath = filepath.Join(home, ".ssh")
 
 func init() {
 	// initialize the store path
