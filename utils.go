@@ -176,10 +176,12 @@ func CreateLink(alias string, keyMap map[string]*SSHKey, env *Environment) {
 	if !found {
 		return
 	}
+
 	relStorePath, err := filepath.Rel(env.SSHPath, env.StorePath)
 	if err != nil {
 		fmt.Println("Failed to find rel store path")
 	}
+
 	//Create symlink for private key
 	if err := os.Symlink(filepath.Join(relStorePath, alias, key.Type.PrivateKey()), filepath.Join(env.SSHPath, key.Type.PrivateKey())); err != nil {
 		fmt.Println("Failed to create symble link for private key")
@@ -196,7 +198,7 @@ func CreateLink(alias string, keyMap map[string]*SSHKey, env *Environment) {
 func loadSingleKey(keyPath string, env *Environment) *SSHKey {
 	key := &SSHKey{}
 
-	//Walkthrough SSH key store and load all the keys
+	//Walk-through SSH key store and load all the keys
 	err := filepath.Walk(keyPath, func(path string, f os.FileInfo, err error) error {
 		if f == nil {
 			return err
@@ -224,7 +226,13 @@ func loadSingleKey(keyPath string, env *Environment) *SSHKey {
 		//Check if key is in use
 		key.PrivateKey = path
 
-		if path == ParsePath(filepath.Join(env.SSHPath, kt.KeyBaseName)) {
+		parsedPath := ParsePath(filepath.Join(env.SSHPath, kt.KeyBaseName))
+		absPath, err := filepath.Abs(filepath.Join(env.SSHPath, parsedPath))
+		if err != nil {
+			return nil
+		}
+
+		if path == absPath {
 			key.IsDefault = true
 		}
 
@@ -268,7 +276,7 @@ func ParsePath(path string) string {
 func LoadSSHKeys(env *Environment) map[string]*SSHKey {
 	keys := map[string]*SSHKey{}
 
-	//Walkthrough SSH key store and load all the keys
+	//Walk-through SSH key store and load all the keys
 	err := filepath.Walk(env.StorePath, func(path string, f os.FileInfo, err error) error {
 		if f == nil {
 			return err
