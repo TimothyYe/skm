@@ -227,12 +227,8 @@ func loadSingleKey(keyPath string, env *Environment) *SSHKey {
 		key.PrivateKey = path
 
 		parsedPath := ParsePath(filepath.Join(env.SSHPath, kt.KeyBaseName))
-		absPath, err := filepath.Abs(filepath.Join(env.SSHPath, parsedPath))
-		if err != nil {
-			return nil
-		}
 
-		if path == absPath {
+		if path == parsedPath {
 			key.IsDefault = true
 		}
 
@@ -266,6 +262,10 @@ func ParsePath(path string) string {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		if !filepath.IsAbs(originFile) {
+		        originFile = filepath.Join(filepath.Dir(path), originFile)
+                }
 
 		return originFile
 	}
