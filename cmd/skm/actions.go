@@ -173,15 +173,17 @@ func list(c *cli.Context) error {
 	for _, k := range keys {
 		key := keyMap[k]
 		keyDesc := ""
+		keyType := ""
 
 		keyStr := strings.SplitAfterN(getKeyPayload(key.PublicKey), " ", 3)
 		if len(keyStr) >= 3 {
 			keyDesc = strings.TrimSpace(keyStr[2])
+			keyType = strings.TrimSpace(keyStr[0])
 		}
 		if key.IsDefault {
-			color.Green("->\t%s\t[%s]", k, keyDesc)
+			color.Green("->\t%s\t[%s]\t[%s]", k, keyType, keyDesc)
 		} else {
-			color.Blue("\t%s\t[%s]", k, keyDesc)
+			color.Blue("\t%s\t[%s]\t[%s]", k, keyType, keyDesc)
 		}
 	}
 	return nil
