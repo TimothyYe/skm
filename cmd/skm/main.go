@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/TimothyYe/skm"
+	"github.com/fatih/color"
 
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -59,6 +60,17 @@ func mustGetEnvironment(ctx *cli.Context) *skm.Environment {
 	if storePath == "" || sshPath == "" {
 		log.Fatalf("store-path (%v) and ssh-path (%v) have to be set!", storePath, sshPath)
 	}
+
+	// create SSH path if it doesn't exist
+	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
+		err := os.Mkdir(sshPath, 0755)
+
+		if err != nil {
+			color.Red("%sFailed to initialize SSH path!", skm.CrossSymbol)
+			return nil
+		}
+	}
+
 	if resticPath == "" {
 		resticPath, _ = exec.LookPath("restic")
 	}
