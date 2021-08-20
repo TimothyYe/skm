@@ -21,6 +21,9 @@ func init() {
 	if envStorePath := os.Getenv("SKM_STORE_PATH"); envStorePath != "" {
 		defaultStorePath = envStorePath
 	}
+	if d, err := os.Readlink(defaultStorePath); err == nil {
+		defaultStorePath = d
+	}
 }
 
 func main() {
