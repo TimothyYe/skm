@@ -52,7 +52,7 @@ Download it from [releases](https://github.com/TimothyYe/skm/releases) and extac
 ```bash
 % skm
 
-SKM V0.8.1
+SKM V0.8.5
 https://github.com/TimothyYe/skm
 
 NAME:
