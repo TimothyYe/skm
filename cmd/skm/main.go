@@ -2,17 +2,15 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"github.com/TimothyYe/skm/internal/utils"
 	"os"
-	"os/exec"
 	"path/filepath"
-
-	"github.com/TimothyYe/skm"
-	"github.com/fatih/color"
 
 	cli "gopkg.in/urfave/cli.v1"
 )
-var home,_ = os.UserHomeDir();
+
+var home, _ = os.UserHomeDir()
+
 var defaultStorePath = filepath.Join(home, ".skm")
 var defaultSSHPath = filepath.Join(home, ".ssh")
 
@@ -47,40 +45,12 @@ func main() {
 			Usage: "Path to the restic binary",
 		},
 	}
-	app.Name = skm.Name
-	app.Usage = skm.Usage
+	app.Name = utils.Name
+	app.Usage = utils.Usage
 	app.Version = Version
 	app.Commands = initCommands()
 	if err := app.Run(os.Args); err != nil {
 		fmt.Println("Failed to run skm:", err)
-	}
-}
-
-func mustGetEnvironment(ctx *cli.Context) *skm.Environment {
-	storePath := ctx.GlobalString("store-path")
-	sshPath := ctx.GlobalString("ssh-path")
-	resticPath := ctx.GlobalString("restic-path")
-	if storePath == "" || sshPath == "" {
-		log.Fatalf("store-path (%v) and ssh-path (%v) have to be set!", storePath, sshPath)
-	}
-
-	// create SSH path if it doesn't exist
-	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
-		err := os.Mkdir(sshPath, 0755)
-
-		if err != nil {
-			color.Red("%sFailed to initialize SSH path!", skm.CrossSymbol)
-			return nil
-		}
-	}
-
-	if resticPath == "" {
-		resticPath, _ = exec.LookPath("restic")
-	}
-	return &skm.Environment{
-		StorePath:  storePath,
-		SSHPath:    sshPath,
-		ResticPath: resticPath,
 	}
 }
 
