@@ -77,7 +77,7 @@ func TestInitAction(t *testing.T) {
 		}
 		if !t.Failed() {
 			c := cli.NewContext(nil, flags, nil)
-			err := initialize(c)
+			err := Initialize(c)
 			if err == nil && testcase.err {
 				t.Errorf("[%s] should have returned an error", testcase.code)
 			}
