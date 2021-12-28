@@ -17,3 +17,4 @@
 cmd/skm/skm
 .DS_Store
 .env
+.idea

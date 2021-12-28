@@ -1,4 +1,4 @@
-![](https://raw.githubusercontent.com/TimothyYe/skm/master/snapshots/skm.png)
+![](https://raw.githubusercontent.com/TimothyYe/skm/master/assets/snapshots/skm.png)
 
 [![MIT licensed][5]][6] [![LICENSE](https://img.shields.io/badge/license-NPL%20(The%20996%20Prohibited%20License)-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE) [![Build Status][1]][2] [![Go Report Card][7]][8] [![GoCover.io][11]][12] [![GoDoc][9]][10]
 
@@ -15,7 +15,7 @@
 
 SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multiple SSH keys easily!
 
-![](https://github.com/TimothyYe/skm/blob/master/snapshots/demo.gif?raw=true)
+![](https://github.com/TimothyYe/skm/blob/master/assets/snapshots/demo.gif?raw=true)
 
 ## Features
 
@@ -136,7 +136,7 @@ Now using SSH key: dev
 
 You can just type ```skm use```, then a prompt UI will help you to choose the right SSH key:
 
-![](https://github.com/TimothyYe/skm/blob/master/snapshots/prompt.gif?raw=true)
+![](https://github.com/TimothyYe/skm/blob/master/assets/snapshots/prompt.gif?raw=true)
 
 ### Display public key
 
