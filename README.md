@@ -289,7 +289,7 @@ __List your cached SSH keys from SSH agent__
 ### Customized SSH key store path
 
 By default, SKM uses `$HOME/.skm` as the default path of SSH key store.
-You can define your customized in your `~/.bashrc` or `~/.zshrc` by adding:
+You can define your customized key store path in your `~/.bashrc` or `~/.zshrc` by adding:
 
 ```bash
 SKM_STORE_PATH=/usr/local/.skm
