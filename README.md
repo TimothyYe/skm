@@ -62,7 +62,7 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.8.1
+   0.8.5
 
 COMMANDS:
      init, i      Initialize SSH keys store for the first time usage.
