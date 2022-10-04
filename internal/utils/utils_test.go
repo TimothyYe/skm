@@ -2,13 +2,14 @@ package utils
 
 import (
 	"fmt"
-	"github.com/TimothyYe/skm/internal/models"
+	"math/rand"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"math/rand"
+	"github.com/TimothyYe/skm/internal/models"
 )
 
 var random *rand.Rand
@@ -41,31 +42,38 @@ func tearDownTestEnvironment(t *testing.T, env *models.Environment) {
 }
 
 func TestExecute(t *testing.T) {
-	result := Execute("/home", "ls")
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		t.Errorf("get user home dir error: %v", err)
+	}
+	result := Execute(homedir, "ls")
 	if !result {
 		t.Error("should return true")
 	}
 
-	result = Execute("/home", "aaa")
+	result = Execute(homedir, "aaa")
 	if result {
 		t.Error("should return false")
 	}
 }
 
 func TestParsePath(t *testing.T) {
-	path := ParsePath("/etc/passwd")
-
-	if path != "/etc/passwd" {
-		t.Error("path are not equal")
+	file, err := os.CreateTemp("", "path1")
+	if err != nil {
+		t.Error(err)
 	}
 
+	path1 := ParsePath(file.Name())
+	defer os.Remove(path1)
+
+	path2 := path.Join(os.TempDir(), "path2")
+	defer os.Remove(path2)
 	// parse symbol link
-	if err := os.Symlink("/etc/passwd", "/tmp/passwd"); err != nil {
+	if err := os.Symlink(path1, path2); err != nil {
 		t.Error("failed to parse symbol link")
 	}
-	path = ParsePath("/tmp/passwd")
 
-	if path != "/etc/passwd" {
+	if path1 != ParsePath(path2) {
 		t.Error("path are not equal")
 	}
 }
