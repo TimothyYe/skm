@@ -60,7 +60,7 @@ func Restore(c *cli.Context) error {
 	}
 
 	// Clear all keys
-	utils.ClearKey(env)
+	utils.ClearKey(env, "")
 	err = os.Mkdir(env.StorePath, 0755)
 	if err != nil {
 		color.Red("%sFailed to initialize SSH key store!", utils.CrossSymbol)

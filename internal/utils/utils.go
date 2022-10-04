@@ -31,6 +31,12 @@ const (
 	PublicKey = "id_rsa.pub"
 	// PrivateKey is the default name of SSH private key
 	PrivateKey = "id_rsa"
+
+	// Ed25519PublicKey is the default name of ed25519 SSH public key
+	Ed25519PublicKey = "id_ed25519.pub"
+	// Ed25519PrivateKey is the default name of ed25519 SSH private key
+	Ed25519PrivateKey = "id_ed25519"
+
 	// DefaultKey is the default alias name of SSH key
 	DefaultKey = "default"
 
@@ -59,8 +65,12 @@ func Execute(workDir, script string, args ...string) bool {
 }
 
 // ClearKey clears both private & public keys from SSH key path
-func ClearKey(env *models.Environment) {
+func ClearKey(env *models.Environment, ty string) {
 	for _, kt := range models.SupportedKeyTypes {
+		if env.KeepTypeKeys && ty != "" && ty != kt.Name {
+			continue
+		}
+
 		// Remove private key if exists
 		PrivateKeyPath := filepath.Join(env.SSHPath, kt.PrivateKey())
 		os.Remove(PrivateKeyPath)
@@ -97,7 +107,7 @@ func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, forTes
 
 	if input == "y" {
 		if inUse {
-			ClearKey(env)
+			ClearKey(env, key.Type.Name)
 		}
 
 		//Remove specified key by alias name
@@ -172,9 +182,12 @@ func ListCache() error {
 
 // CreateLink creates symbol link for specified SSH key
 func CreateLink(alias string, keyMap map[string]*models.SSHKey, env *models.Environment) {
-	ClearKey(env)
-
 	key, found := keyMap[alias]
+	ty := ""
+	if found {
+		ty = key.Type.Name
+	}
+	ClearKey(env, ty)
 
 	if !found {
 		return
@@ -339,6 +352,7 @@ func MustGetEnvironment(ctx *cli.Context) *models.Environment {
 	storePath := ctx.GlobalString("store-path")
 	sshPath := ctx.GlobalString("ssh-path")
 	resticPath := ctx.GlobalString("restic-path")
+	keepTypeKeys := ctx.GlobalBool("keep-type-keys")
 	if storePath == "" || sshPath == "" {
 		log.Fatalf("store-path (%v) and ssh-path (%v) have to be set!", storePath, sshPath)
 	}
@@ -357,8 +371,9 @@ func MustGetEnvironment(ctx *cli.Context) *models.Environment {
 		resticPath, _ = exec.LookPath("restic")
 	}
 	return &models.Environment{
-		StorePath:  storePath,
-		SSHPath:    sshPath,
-		ResticPath: resticPath,
+		StorePath:    storePath,
+		SSHPath:      sshPath,
+		ResticPath:   resticPath,
+		KeepTypeKeys: keepTypeKeys,
 	}
 }

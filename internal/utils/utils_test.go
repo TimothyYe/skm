@@ -68,6 +68,7 @@ func TestParsePath(t *testing.T) {
 
 	path2 := path.Join(os.TempDir(), "path2")
 	defer os.Remove(path2)
+
 	// parse symbol link
 	if err := os.Symlink(path1, path2); err != nil {
 		t.Error("failed to parse symbol link")
@@ -101,16 +102,61 @@ func TestLoadSSHKeys(t *testing.T) {
 func TestClearKey(t *testing.T) {
 	env := setupTestEnvironment(t)
 	defer tearDownTestEnvironment(t, env)
-	ClearKey(env)
 
-	PublicKeyPath := filepath.Join(env.SSHPath, PublicKey)
-	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
-		t.Error("should public key should be removed")
+	publicKeyPath := filepath.Join(env.SSHPath, PublicKey)
+	privateKeyPath := filepath.Join(env.SSHPath, PrivateKey)
+	ed25519PublicKeyPath := filepath.Join(env.SSHPath, Ed25519PublicKey)
+	ed25519PrivateKeyPath := filepath.Join(env.SSHPath, Ed25519PrivateKey)
+	createFile := func(p string) {
+		f, err := os.Create(p)
+		if err != nil {
+			t.Errorf("Create file error: %v", err)
+		}
+		f.Close()
+	}
+	createFile(publicKeyPath)
+	createFile(privateKeyPath)
+	createFile(ed25519PublicKeyPath)
+	createFile(ed25519PrivateKeyPath)
+
+	// clear key with ssh type
+	env.KeepTypeKeys = true
+	ClearKey(env, "ed25519")
+	if _, err := os.Stat(publicKeyPath); os.IsNotExist(err) {
+		t.Error("public key should not be removed")
 	}
 
-	PrivateKeyPath := filepath.Join(env.SSHPath, PrivateKey)
-	if _, err := os.Stat(PrivateKeyPath); !os.IsNotExist(err) {
-		t.Error("should private key should be removed")
+	if _, err := os.Stat(privateKeyPath); os.IsNotExist(err) {
+		t.Error("private key should not be removed")
+	}
+
+	if _, err := os.Stat(ed25519PublicKeyPath); !os.IsNotExist(err) {
+		t.Error("ed25519 public key should be removed")
+	}
+
+	if _, err := os.Stat(ed25519PrivateKeyPath); !os.IsNotExist(err) {
+		t.Error("ed25519 private key should be removed")
+	}
+
+	// clear all keys
+	createFile(ed25519PublicKeyPath)
+	createFile(ed25519PrivateKeyPath)
+	env.KeepTypeKeys = false
+	ClearKey(env, "")
+	if _, err := os.Stat(publicKeyPath); !os.IsNotExist(err) {
+		t.Error("public key should be removed")
+	}
+
+	if _, err := os.Stat(privateKeyPath); !os.IsNotExist(err) {
+		t.Error("private key should be removed")
+	}
+
+	if _, err := os.Stat(ed25519PublicKeyPath); !os.IsNotExist(err) {
+		t.Error("ed25519 public key should be removed")
+	}
+
+	if _, err := os.Stat(ed25519PrivateKeyPath); !os.IsNotExist(err) {
+		t.Error("ed25519 private key should be removed")
 	}
 }
 
@@ -124,7 +170,13 @@ func TestDeleteKey(t *testing.T) {
 	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa.pub"))
 
 	//Construct a key
-	key := models.SSHKey{PrivateKey: filepath.Join(env.StorePath, "testkey123", "id_rsa"), PublicKey: filepath.Join(env.StorePath, "testkey123", "id_rsa.pub")}
+	key := models.SSHKey{
+		PrivateKey: filepath.Join(env.StorePath, "testkey123", "id_rsa"),
+		PublicKey:  filepath.Join(env.StorePath, "testkey123", "id_rsa.pub"),
+		Type: &models.KeyType{
+			Name: "rsa",
+		},
+	}
 	//Delete key
 	DeleteKey("testkey123", &key, env, true)
 

@@ -5,9 +5,10 @@ import "fmt"
 // Environment abstracts away things like the path the .skm and .ssh folder
 // which allows us to simulate them for testing.
 type Environment struct {
-	StorePath  string
-	SSHPath    string
-	ResticPath string
+	StorePath    string
+	SSHPath      string
+	ResticPath   string
+	KeepTypeKeys bool
 }
 
 // SSHKey struct includes both private/public keys & isDefault flag
