@@ -45,9 +45,9 @@ func main() {
 			Usage: "Path to the restic binary",
 		},
 		cli.BoolFlag{
-			Name:   "keep-type-keys",
-			Usage:  "Keep different ssh type keys",
-			EnvVar: "SKM_KEEP_TYPE_KEYS",
+			Name:   "multi-key-types",
+			Usage:  "Support for multi key types",
+			EnvVar: "SKM_MULTI_KEY_TYPES",
 		},
 	}
 	app.Name = utils.Name
