@@ -105,7 +105,7 @@ __NOTE:__ If you already have id_rsa & id_rsa.pub key pairs in ```$HOME/.ssh```,
 __NOTE:__ Currently __ONLY__ RSA and ED25519 keys are supported!
 
 ```bash
-skm create prod -C "abc@abc.com"
+skm create prod -C "abc@abc.com" -t ed25519
 
 Generating public/private rsa key pair.
 Enter passphrase (empty for no passphrase):
