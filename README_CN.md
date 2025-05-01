@@ -13,25 +13,23 @@
 [11]: https://img.shields.io/badge/gocover.io-81.8%25-green.svg
 [12]: https://gocover.io/github.com/timothyye/skm
 
-SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multiple SSH keys easily!
-
-[中文版 README](README_CN.md)
+SKM 是一个简单而强大的 SSH 密钥管理工具。它帮助您轻松管理多个 SSH 密钥！
 
 ![](https://github.com/TimothyYe/skm/blob/master/assets/snapshots/demo.gif?raw=true)
 
-## Features
+## 功能
 
-* Create, List, Delete your SSH key(s)
-* Manage all your SSH keys by alias names
-* Choose and set a default SSH key
-* Display public key via alias name
-* Copy default SSH key to a remote host
-* Rename SSH key alias name
-* Backup and restore all your SSH keys
-* Prompt UI for SSH key selection
-* Customized SSH key store path
+* 创建、列出、删除您的 SSH 密钥
+* 通过别名管理所有 SSH 密钥
+* 选择并设置默认 SSH 密钥
+* 通过别名显示公钥
+* 将默认 SSH 密钥复制到远程主机
+* 重命名 SSH 密钥别名
+* 备份和恢复所有 SSH 密钥
+* SSH 密钥选择的提示界面
+* 自定义 SSH 密钥存储路径
 
-## Installation
+## 安装
 
 #### Homebrew
 
@@ -40,17 +38,17 @@ brew tap timothyye/tap
 brew install timothyye/tap/skm
 ```
 
-#### Using Go
+#### 使用 Go
 
 ```bash
 go get github.com/TimothyYe/skm/cmd/skm
 ```
 
-#### Manual Installation
+#### 手动安装
 
-Download it from [releases](https://github.com/TimothyYe/skm/releases) and extact it to /usr/bin or your PATH directory.
+从 [releases](https://github.com/TimothyYe/skm/releases) 下载并解压到 /usr/bin 或您的 PATH 目录。
 
-## Usage
+## 使用方法
 ```bash
 % skm
 
@@ -88,9 +86,9 @@ GLOBAL OPTIONS:
    --version, -v        print the version
 ```
 
-### For the first time use
+### 首次使用
 
-You should initialize the SSH key store for the first time use:
+首次使用时，您应该初始化 SSH 密钥存储：
 
 ```bash
 % skm init
@@ -98,13 +96,13 @@ You should initialize the SSH key store for the first time use:
 ✔ SSH key store initialized!
 ```
 
-So, where are my SSH keys?
-SKM will create SSH key store at ```$HOME/.skm``` and put all the SSH keys in it.
+那么，我的 SSH 密钥在哪里？
+SKM 将在 ```$HOME/.skm``` 创建 SSH 密钥存储，并将所有 SSH 密钥放入其中。
 
-__NOTE:__ If you already have id_rsa & id_rsa.pub key pairs in ```$HOME/.ssh```, SKM will move them to ```$HOME/.skm/default```
+__注意：__ 如果您已经在 ```$HOME/.ssh``` 中有 id_rsa 和 id_rsa.pub 密钥对，SKM 将它们移动到 ```$HOME/.skm/default```
 
-### Create a new SSH key
-__NOTE:__ Currently __ONLY__ RSA and ED25519 keys are supported!
+### 创建新的 SSH 密钥
+__注意：__ 目前 __仅__ 支持 RSA 和 ED25519 密钥！
 
 ```bash
 skm create prod -C "abc@abc.com" -t ed25519
@@ -118,7 +116,7 @@ Your public key has been saved in /Users/timothy/.skm/prod/id_rsa.pub.
 ✔ SSH key [prod] created!
 ```
 
-### List SSH keys
+### 列出 SSH 密钥
 ```bash
 % skm ls
 
@@ -128,31 +126,31 @@ Your public key has been saved in /Users/timothy/.skm/prod/id_rsa.pub.
         dev
         prod
 ```
-### Set default SSH key
+### 设置默认 SSH 密钥
 ```bash
 % skm use dev
 Now using SSH key: dev
 ```
 
-### Prompt UI for key selection
+### 密钥选择的提示界面
 
-You can just type ```skm use```, then a prompt UI will help you to choose the right SSH key:
+您可以直接输入 ```skm use```，然后一个提示界面将帮助您选择正确的 SSH 密钥：
 
 ![](https://github.com/TimothyYe/skm/blob/master/assets/snapshots/prompt.gif?raw=true)
 
-### Display public key
+### 显示公钥
 
 ```bash
 % skm display
 ```
 
-Or display specific SSH public key by alias name:
+或通过别名显示特定的 SSH 公钥：
 
 ```bash
 % skm display prod
 ```
 
-### Delete a SSH key
+### 删除 SSH 密钥
 
 ```bash
 % skm delete prod
@@ -160,7 +158,7 @@ Or display specific SSH public key by alias name:
 Please confirm to delete SSH key [prod] [y/n]: y
 ✔ SSH key [prod] deleted!
 ```
-### Copy SSH public key to a remote host
+### 将 SSH 公钥复制到远程主机
 
 ```bash
 % skm cp timothy@example.com
@@ -178,16 +176,16 @@ and check to make sure that only the key(s) you wanted were added.
 ✔  Current SSH key already copied to remote host
 ```
 
-### Rename a SSH key with a new alias name
+### 重命名 SSH 密钥别名
 
 ```bash
 % skm rn test tmp
 ✔  SSH key [test] renamed to [tmp]
 ```
 
-### Backup SSH keys
+### 备份 SSH 密钥
 
-Backup all your SSH keys to $HOME directory by default.
+默认情况下，将所有 SSH 密钥备份到 $HOME 目录。
 
 ```bash
 % skm backup
@@ -206,8 +204,7 @@ a ./test/id_rsa.pub
 ✔  All SSH keys backup to: /Users/timothy/skm-20171016170707.tar
 ```
 
-If you have [restic](https://restic.net/) installed then you can also use that
-to create backups of your SKM store:
+如果您安装了 [restic](https://restic.net/)，也可以使用它来创建备份：
 
 ```bash
 # First, you need a password for your repository
@@ -227,7 +224,7 @@ snapshot $SNAPSHOT saved
 ✔  Backup to /Users/$USER/.skm-backups complete
 ```
 
-### Restore SSH keys
+### 恢复 SSH 密钥
 
 ```bash
 % skm restore ~/skm-20171016172828.tar.gz                                                                                           
@@ -247,8 +244,7 @@ x ./test/id_rsa.pub
 ✔  All SSH keys restored to /Users/timothy/.skm
 ```
 
-Again, SKM also supports [restic](https://restic.net/) to create and restore
-backups:
+同样，SKM 也支持 [restic](https://restic.net/) 创建和恢复备份：
 
 ```bash
 % skm restore --restic --restic-snapshot $SNAPSHOT
@@ -257,11 +253,11 @@ restoring <Snapshot $SNAPSHOT of [/Users/$USER/.skm] at 2018-10-03 19:40:33.3331
 ✔  Backup restored to /Users/$USER/.skm
 ```
 
-### Integrate with SSH agent
+### 与 SSH 代理集成
 
-You can use `cache` command to cache your SSH key into SSH agent's cache via SSH alias name.
+您可以使用 `cache` 命令通过 SSH 别名将 SSH 密钥缓存到 SSH 代理的缓存中。
 
-__Cache your SSH key__  
+__缓存您的 SSH 密钥__  
 
 ```bash
 λ tim [~/]
@@ -271,7 +267,7 @@ Identity added: /Users/timothy/.skm/my/id_rsa (/Users/timothy/.skm/my/id_rsa)
 ✔  SSH key [my] already added into cache
 ```
 
-__Remove your SSH key from cache__  
+__从缓存中删除您的 SSH 密钥__  
 
 ```bash
 λ tim [~/]
@@ -280,7 +276,7 @@ Identity removed: /Users/timothy/.skm/my/id_rsa (MyKEY)
 ✔  SSH key [my] removed from cache
 ```
 
-__List your cached SSH keys from SSH agent__  
+__列出 SSH 代理中缓存的 SSH 密钥__  
 
 ```bash
 λ tim [~/]
@@ -288,28 +284,28 @@ __List your cached SSH keys from SSH agent__
 2048 SHA256:qAVcwc0tdUOCjH3sTskwxAmfMQiL2sKtfPBXFnUoZHQ /Users/timothy/.skm/my/id_rsa (RSA)
 ```
 
-### Customized SSH key store path
+### 自定义 SSH 密钥存储路径
 
-By default, SKM uses `$HOME/.skm` as the default path of SSH key store.
-You can define your customized key store path in your `~/.bashrc` or `~/.zshrc` by adding:
+默认情况下，SKM 使用 `$HOME/.skm` 作为 SSH 密钥存储的默认路径。
+您可以在 `~/.bashrc` 或 `~/.zshrc` 中定义自定义的密钥存储路径，方法是添加：
 
 ```bash
 SKM_STORE_PATH=/usr/local/.skm
 ```
 
-### Hook mechanism
+### 钩子机制
 
-Edit and place a executable file named ```hook``` at the specified key directory, for example:
+在指定的密钥目录中编辑并放置一个名为 ```hook``` 的可执行文件，例如：
 
 ```bash
 ~/.skm/prod/hook
 ```
 
-This hook file can be both an executable binary file or an executable script file.
+这个钩子文件可以是可执行的二进制文件或可执行的脚本文件。
 
-SKM will call this hook file after switching default SSH key to it, you can do some stuff in this hook file. 
+SKM 会在切换默认 SSH 密钥后调用这个钩子文件，您可以在这个钩子文件中做一些操作。
 
-For example, if you want to use different git username & email after you switch to use a different SSH key, you can create one hook file, and put shell commands in it:
+例如，如果您希望在切换到不同的 SSH 密钥后使用不同的 git 用户名和电子邮件，您可以创建一个钩子文件，并在其中放置 shell 命令：
 
 ```bash
 #!/bin/bash
@@ -317,14 +313,14 @@ git config --global user.name "YourNewName"
 git config --global user.email "YourNewEmail@example.com"
 ```
 
-Then make this hook file executable:
+然后使这个钩子文件可执行：
 
 ```bash
 chmod +x hook
 ```
 
-SKM will call this hook file and change git global settings for you!
+SKM 将调用这个钩子文件并为您更改 git 全局设置！
 
-## Licence
+## 许可证
 
-[MIT License](https://github.com/TimothyYe/skm/blob/master/LICENSE)  
+[MIT 许可证](https://github.com/TimothyYe/skm/blob/master/LICENSE)  
