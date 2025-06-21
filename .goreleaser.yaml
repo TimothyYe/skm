@@ -1,4 +1,4 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
+version: 2
 # Make sure to check the documentation at https://goreleaser.com
 before:
   hooks:
@@ -14,6 +14,8 @@ builds:
       - linux
       - windows
       - darwin
+      - freebsd
+      - openbsd
     goarch:
       - 386
       - amd64
@@ -26,12 +28,7 @@ builds:
     ldflags:
       - -s -w -X main.Version={{.Tag}}
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 checksum:
   name_template: 'checksums.txt'
 snapshot:
