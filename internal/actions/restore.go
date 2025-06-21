@@ -2,12 +2,13 @@ package actions
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/TimothyYe/skm/internal/utils"
 	"github.com/TimothyYe/skm/pkg/lib"
 	"github.com/fatih/color"
 	"gopkg.in/urfave/cli.v1"
-	"os"
-	"path/filepath"
 )
 
 func Restore(c *cli.Context) error {
@@ -37,6 +38,15 @@ func Restore(c *cli.Context) error {
 		return nil
 	}
 
+	var confirm string
+	color.Green("This operation will overwrite all you current SSH keys, please make sure you want to do this operation?")
+	fmt.Print("(Y/n):")
+	fmt.Scan(&confirm)
+
+	if confirm != "Y" {
+		os.Exit(0)
+	}
+
 	// Clear the key store first
 	err := os.RemoveAll(env.StorePath)
 
@@ -48,15 +58,6 @@ func Restore(c *cli.Context) error {
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
 		color.Red("%sFailed to get the file path!", utils.CrossSymbol)
-	}
-
-	var confirm string
-	color.Green("This operation will overwrite all you current SSH keys, please make sure you want to do this operation?")
-	fmt.Print("(Y/n):")
-	fmt.Scan(&confirm)
-
-	if confirm != "Y" {
-		os.Exit(0)
 	}
 
 	// Clear all keys
