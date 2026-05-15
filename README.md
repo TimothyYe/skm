@@ -325,6 +325,10 @@ chmod +x hook
 
 SKM will call this hook file and change git global settings for you!
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=timothyye/skm&type=date&legend=top-left)](https://www.star-history.com/#timothyye/skm&type=date&legend=top-left)
+
 ## Licence
 
 [MIT License](https://github.com/TimothyYe/skm/blob/master/LICENSE)  
