@@ -182,18 +182,18 @@ func CreateLink(alias string, keyMap map[string]*models.SSHKey, env *models.Envi
 
 	relStorePath, err := filepath.Rel(env.SSHPath, env.StorePath)
 	if err != nil {
-		fmt.Println("Failed to find rel store path")
+		color.Red("%sFailed to find rel store path", CrossSymbol)
 	}
 
 	//Create symlink for private key
 	if err := os.Symlink(filepath.Join(relStorePath, alias, key.Type.PrivateKey()), filepath.Join(env.SSHPath, key.Type.PrivateKey())); err != nil {
-		fmt.Println("Failed to create symble link for private key")
+		color.Red("%sFailed to create symbol link for private key", CrossSymbol)
 		return
 	}
 
 	//Create symlink for public key
 	if err := os.Symlink(filepath.Join(relStorePath, alias, key.Type.PublicKey()), filepath.Join(env.SSHPath, key.Type.PublicKey())); err != nil {
-		fmt.Println("Failed to create symble link for private key")
+		color.Red("%sFailed to create symbol link for public key", CrossSymbol)
 		return
 	}
 }
@@ -239,7 +239,7 @@ func loadSingleKey(keyPath string, env *models.Environment) *models.SSHKey {
 	})
 
 	if err != nil {
-		fmt.Printf("filepath.Walk() returned %v\n", err)
+		color.Red("%sfilepath.Walk() returned %v", CrossSymbol, err)
 		return nil
 	}
 
@@ -262,8 +262,8 @@ func ParsePath(path string) string {
 		originFile, err := os.Readlink(path)
 
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			color.Red("%s%s", CrossSymbol, err.Error())
+			return ""
 		}
 
 		if !filepath.IsAbs(originFile) {
@@ -302,7 +302,7 @@ func LoadSSHKeys(env *models.Environment) map[string]*models.SSHKey {
 	})
 
 	if err != nil {
-		fmt.Printf("filepath.Walk() returned %v\n", err)
+		color.Red("%sfilepath.Walk() returned %v", CrossSymbol, err)
 	}
 
 	return keys
@@ -345,7 +345,7 @@ func MustGetEnvironment(ctx *cli.Context) *models.Environment {
 
 	// create SSH path if it doesn't exist
 	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
-		err := os.Mkdir(sshPath, 0755)
+		err := os.Mkdir(sshPath, 0700)
 
 		if err != nil {
 			color.Red("%sFailed to initialize SSH path!", CrossSymbol)

@@ -5,6 +5,7 @@ import (
 	"github.com/TimothyYe/skm/internal/models"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,14 +60,32 @@ func TestParsePath(t *testing.T) {
 		t.Error("path are not equal")
 	}
 
-	// parse symbol link
-	if err := os.Symlink("/etc/passwd", "/tmp/passwd"); err != nil {
-		t.Error("failed to parse symbol link")
+	// parse symbol link via a unique tmp path so re-runs don't collide
+	linkPath := filepath.Join(t.TempDir(), "passwd-link")
+	if err := os.Symlink("/etc/passwd", linkPath); err != nil {
+		t.Fatalf("failed to create symbol link: %v", err)
 	}
-	path = ParsePath("/tmp/passwd")
+	path = ParsePath(linkPath)
 
 	if path != "/etc/passwd" {
-		t.Error("path are not equal")
+		t.Errorf("expected /etc/passwd, got %q", path)
+	}
+}
+
+func TestParsePath_NonExistent(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "does-not-exist")
+	if got := ParsePath(missing); got != "" {
+		t.Errorf("expected empty string for non-existent path, got %q", got)
+	}
+}
+
+func TestParsePath_RegularFile(t *testing.T) {
+	regular := filepath.Join(t.TempDir(), "regular")
+	if err := os.WriteFile(regular, []byte("data"), 0600); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if got := ParsePath(regular); got != regular {
+		t.Errorf("regular file should be returned unchanged, got %q", got)
 	}
 }
 
@@ -169,5 +188,182 @@ func TestIsEmpty(t *testing.T) {
 	defer tearDownTestEnvironment(t, env)
 	if ok, err := IsEmpty(env.StorePath); err != nil || !ok {
 		t.Error("directory should be empty")
+	}
+}
+
+func TestIsEmpty_NonEmpty(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+	mustWriteFile(t, filepath.Join(env.StorePath, "marker"), "x")
+	ok, err := IsEmpty(env.StorePath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ok {
+		t.Error("directory containing a file should not be reported as empty")
+	}
+}
+
+func TestIsEmpty_NonExistent(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "does-not-exist")
+	if _, err := IsEmpty(missing); err == nil {
+		t.Error("expected error for non-existent path")
+	}
+}
+
+func TestGetBakFileName_Format(t *testing.T) {
+	name := GetBakFileName()
+	if !strings.HasPrefix(name, "skm-") || !strings.HasSuffix(name, ".tar.gz") {
+		t.Errorf("unexpected backup filename: %q", name)
+	}
+	// skm-YYYYMMDDhhmmss.tar.gz is 26 chars.
+	if len(name) != len("skm-")+14+len(".tar.gz") {
+		t.Errorf("backup filename has unexpected length: %q", name)
+	}
+}
+
+func TestLoadSSHKeys_DetectsED25519(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	dir := filepath.Join(env.StorePath, "ed-alias")
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	mustWriteFile(t, filepath.Join(dir, "id_ed25519"), "priv")
+	mustWriteFile(t, filepath.Join(dir, "id_ed25519.pub"), "pub")
+
+	keys := LoadSSHKeys(env)
+	k, ok := keys["ed-alias"]
+	if !ok {
+		t.Fatal("expected ed-alias to be loaded")
+	}
+	if k.Type == nil || k.Type.Name != "ed25519" {
+		t.Errorf("expected type ed25519, got %#v", k.Type)
+	}
+	if k.IsDefault {
+		t.Error("key without an active ~/.ssh symlink should not be marked default")
+	}
+}
+
+func TestLoadSSHKeys_DetectsDefault(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "active"
+	dir := filepath.Join(env.StorePath, alias)
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	priv := filepath.Join(dir, "id_rsa")
+	pub := filepath.Join(dir, "id_rsa.pub")
+	mustWriteFile(t, priv, "priv")
+	mustWriteFile(t, pub, "pub")
+	// Symlink ~/.ssh/id_rsa to the stored key so IsDefault should be set.
+	if err := os.Symlink(priv, filepath.Join(env.SSHPath, "id_rsa")); err != nil {
+		t.Fatalf("setup symlink: %v", err)
+	}
+
+	keys := LoadSSHKeys(env)
+	k, ok := keys[alias]
+	if !ok {
+		t.Fatal("expected alias to be loaded")
+	}
+	if !k.IsDefault {
+		t.Error("expected IsDefault=true when ~/.ssh symlink points to the stored key")
+	}
+}
+
+func TestCreateLink_CreatesSymlinks(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "linked"
+	dir := filepath.Join(env.StorePath, alias)
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	priv := filepath.Join(dir, "id_rsa")
+	pub := filepath.Join(dir, "id_rsa.pub")
+	mustWriteFile(t, priv, "priv")
+	mustWriteFile(t, pub, "pub")
+
+	keys := LoadSSHKeys(env)
+	CreateLink(alias, keys, env)
+
+	for filename, target := range map[string]string{
+		"id_rsa":     priv,
+		"id_rsa.pub": pub,
+	} {
+		linkPath := filepath.Join(env.SSHPath, filename)
+		fi, err := os.Lstat(linkPath)
+		if err != nil {
+			t.Fatalf("expected symlink at %s: %v", linkPath, err)
+		}
+		if fi.Mode()&os.ModeSymlink == 0 {
+			t.Errorf("%s is not a symlink", filename)
+			continue
+		}
+		if got := ParsePath(linkPath); got != target {
+			t.Errorf("symlink %s -> %q, want %q", filename, got, target)
+		}
+	}
+}
+
+func TestCreateLink_UnknownAliasClearsExisting(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	// Drop a stand-in key into ~/.ssh that should be wiped by ClearKey.
+	mustWriteFile(t, filepath.Join(env.SSHPath, PrivateKey), "existing")
+
+	CreateLink("does-not-exist", map[string]*models.SSHKey{}, env)
+
+	if _, err := os.Stat(filepath.Join(env.SSHPath, PrivateKey)); !os.IsNotExist(err) {
+		t.Error("ClearKey should run even when the requested alias is missing")
+	}
+}
+
+func TestDeleteKey_InUseClearsSshSymlinks(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "to-delete"
+	dir := filepath.Join(env.StorePath, alias)
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	priv := filepath.Join(dir, "id_rsa")
+	pub := filepath.Join(dir, "id_rsa.pub")
+	mustWriteFile(t, priv, "priv")
+	mustWriteFile(t, pub, "pub")
+	if err := os.Symlink(priv, filepath.Join(env.SSHPath, "id_rsa")); err != nil {
+		t.Fatalf("setup priv symlink: %v", err)
+	}
+	if err := os.Symlink(pub, filepath.Join(env.SSHPath, "id_rsa.pub")); err != nil {
+		t.Fatalf("setup pub symlink: %v", err)
+	}
+
+	keys := LoadSSHKeys(env)
+	key, ok := keys[alias]
+	if !ok {
+		t.Fatal("setup: alias not loaded")
+	}
+	DeleteKey(alias, key, env, true)
+
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Error("alias directory should be removed")
+	}
+	for _, base := range []string{"id_rsa", "id_rsa.pub"} {
+		if _, err := os.Lstat(filepath.Join(env.SSHPath, base)); !os.IsNotExist(err) {
+			t.Errorf("expected ~/.ssh/%s to be cleared", base)
+		}
+	}
+}
+
+func mustWriteFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatalf("write %s: %v", path, err)
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/TimothyYe/skm/internal/utils"
 	"github.com/fatih/color"
 	cli "gopkg.in/urfave/cli.v1"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -30,7 +29,7 @@ func Initialize(c *cli.Context) error {
 	}
 
 	if _, err := os.Stat(env.StorePath); os.IsNotExist(err) {
-		err := os.Mkdir(env.StorePath, 0755)
+		err := os.Mkdir(env.StorePath, 0700)
 
 		if err != nil {
 			color.Red("%sFailed to initialize SSH key store!", utils.CrossSymbol)
@@ -43,7 +42,7 @@ func Initialize(c *cli.Context) error {
 	for _, kt := range models.SupportedKeyTypes {
 		if _, err := os.Stat(filepath.Join(env.SSHPath, kt.PrivateKey())); !os.IsNotExist(err) {
 			// Create alias directory
-			err := os.Mkdir(filepath.Join(env.StorePath, utils.DefaultKey), 0755)
+			err := os.Mkdir(filepath.Join(env.StorePath, utils.DefaultKey), 0700)
 			if err != nil {
 				color.Red("%sFailed to create default key store!", utils.CrossSymbol)
 				return nil
@@ -51,10 +50,10 @@ func Initialize(c *cli.Context) error {
 
 			// Move key to default key store
 			if err := os.Rename(filepath.Join(env.SSHPath, kt.PrivateKey()), filepath.Join(env.StorePath, utils.DefaultKey, kt.PrivateKey())); err != nil {
-				color.Red("%sFailed to move key to default key store")
+				color.Red("%sFailed to move key to default key store", utils.CrossSymbol)
 			}
 			if err := os.Rename(filepath.Join(env.SSHPath, kt.PublicKey()), filepath.Join(env.StorePath, utils.DefaultKey, kt.PublicKey())); err != nil {
-				color.Red("%sFailed to move key to default key store")
+				color.Red("%sFailed to move key to default key store", utils.CrossSymbol)
 			}
 
 			// Once we have the old keys in place, we can load the key map.
@@ -72,7 +71,7 @@ func Initialize(c *cli.Context) error {
 }
 
 func getKeyPayload(keyPath string) string {
-	key, err := ioutil.ReadFile(keyPath)
+	key, err := os.ReadFile(keyPath)
 	if err != nil {
 		fmt.Println("Failed to read ", keyPath)
 		return ""

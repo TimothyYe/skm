@@ -34,7 +34,7 @@ func Restore(c *cli.Context) error {
 	if c.NArg() > 0 {
 		filePath = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input the corrent backup file path!", utils.CrossSymbol)
+		color.Red("%sPlease input the correct backup file path!", utils.CrossSymbol)
 		return nil
 	}
 
@@ -51,7 +51,7 @@ func Restore(c *cli.Context) error {
 	err := os.RemoveAll(env.StorePath)
 
 	if err != nil {
-		fmt.Println("Clear store path failed:", err.Error())
+		color.Red("%sClear store path failed: %s", utils.CrossSymbol, err.Error())
 	}
 
 	// Extract backup file
@@ -62,7 +62,7 @@ func Restore(c *cli.Context) error {
 
 	// Clear all keys
 	utils.ClearKey(env)
-	err = os.Mkdir(env.StorePath, 0755)
+	err = os.Mkdir(env.StorePath, 0700)
 	if err != nil {
 		color.Red("%sFailed to initialize SSH key store!", utils.CrossSymbol)
 		return nil

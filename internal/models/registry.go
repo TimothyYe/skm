@@ -28,7 +28,7 @@ func init() {
 
 	SupportedKeyTypes["ed25519"] = KeyType{
 		Name:                    "ed25519",
-		SupportsVariableBitsize: true,
+		SupportsVariableBitsize: false,
 		KeyBaseName:             "id_ed25519",
 	}
 }

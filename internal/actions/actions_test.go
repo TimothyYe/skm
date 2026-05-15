@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/TimothyYe/skm/internal/models"
 	"github.com/TimothyYe/skm/internal/utils"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -136,7 +135,114 @@ func writeFile(t *testing.T, path string, data []byte) {
 	if t.Failed() {
 		return
 	}
-	if err := ioutil.WriteFile(path, data, 0600); err != nil {
+	if err := os.WriteFile(path, data, 0600); err != nil {
 		t.Fatalf("Failed to write %s: %s", path, err.Error())
+	}
+}
+
+func newContextForArgs(t *testing.T, env *models.Environment, positionalArgs []string, stringFlags ...string) *cli.Context {
+	t.Helper()
+	flags := flag.NewFlagSet("", flag.ContinueOnError)
+	flags.String("ssh-path", env.SSHPath, "")
+	flags.String("store-path", env.StorePath, "")
+	for _, name := range stringFlags {
+		flags.String(name, "", "")
+	}
+	if err := flags.Parse(positionalArgs); err != nil {
+		t.Fatalf("flag parse: %v", err)
+	}
+	return cli.NewContext(nil, flags, nil)
+}
+
+func TestRename(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	src := filepath.Join(env.StorePath, "before")
+	if err := os.Mkdir(src, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	writeFile(t, filepath.Join(src, "id_rsa"), []byte("priv"))
+
+	c := newContextForArgs(t, env, []string{"before", "after"})
+	if err := Rename(c); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(env.StorePath, "after", "id_rsa")); err != nil {
+		t.Errorf("expected renamed dir to contain the key: %v", err)
+	}
+	if _, err := os.Stat(src); !os.IsNotExist(err) {
+		t.Error("old alias directory should be gone")
+	}
+}
+
+func TestRename_MissingArgsNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	src := filepath.Join(env.StorePath, "before")
+	if err := os.Mkdir(src, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	// Only one positional arg - Rename should print an error and leave state alone.
+	c := newContextForArgs(t, env, []string{"before"})
+	if err := Rename(c); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+
+	if _, err := os.Stat(src); err != nil {
+		t.Errorf("source alias should remain untouched: %v", err)
+	}
+}
+
+func TestCreate_DuplicateAliasSkipsKeygen(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	alias := "dup"
+	dir := filepath.Join(env.StorePath, alias)
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	priv := filepath.Join(dir, "id_rsa")
+	pub := filepath.Join(dir, "id_rsa.pub")
+	writeFile(t, priv, []byte("PRIV-ORIGINAL"))
+	writeFile(t, pub, []byte("PUB-ORIGINAL"))
+
+	c := newContextForArgs(t, env, []string{alias}, "t", "b", "C")
+	if err := Create(c); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	// Files must remain byte-identical: ssh-keygen was not invoked.
+	for path, want := range map[string]string{priv: "PRIV-ORIGINAL", pub: "PUB-ORIGINAL"} {
+		got, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read %s: %v", path, err)
+		}
+		if string(got) != want {
+			t.Errorf("%s was overwritten: got %q, want %q", path, string(got), want)
+		}
+	}
+}
+
+func TestCreate_MissingAliasNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	c := newContextForArgs(t, env, nil, "t", "b", "C")
+	if err := Create(c); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	// No alias dirs should have been created.
+	entries, err := os.ReadDir(env.StorePath)
+	if err != nil {
+		t.Fatalf("read store: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("expected store to be empty, got %d entries", len(entries))
 	}
 }

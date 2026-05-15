@@ -42,7 +42,7 @@ func Create(c *cli.Context) error {
 	}
 
 	// Create alias directory
-	err := os.Mkdir(filepath.Join(env.StorePath, alias), 0755)
+	err := os.Mkdir(filepath.Join(env.StorePath, alias), 0700)
 
 	if err != nil {
 		color.Red("%sCreate SSH key failed!", utils.CrossSymbol)
@@ -80,7 +80,12 @@ func Create(c *cli.Context) error {
 		args = append(args, comment)
 	}
 
-	utils.Execute("", "ssh-keygen", args...)
+	if !utils.Execute("", "ssh-keygen", args...) {
+		color.Red("%sCreate SSH key failed!", utils.CrossSymbol)
+		// Clean up the empty alias directory we just created
+		_ = os.Remove(filepath.Join(env.StorePath, alias))
+		return nil
+	}
 	color.Green("%sSSH key [%s] created!", utils.CheckSymbol, alias)
 	return nil
 }
