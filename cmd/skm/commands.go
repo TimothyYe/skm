@@ -91,6 +91,26 @@ func initCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "import",
+			Aliases: []string{"im"},
+			Usage:   "Import an existing SSH key pair from a path into the store",
+			Action:  actions.Import,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "alias, a", Usage: "Alias name for the imported key"},
+				cli.BoolFlag{Name: "move", Usage: "Delete the source files after a successful import"},
+			},
+		},
+		{
+			Name:    "export",
+			Aliases: []string{"ex"},
+			Usage:   "Export a single key as a tar.gz bundle (optionally encrypted)",
+			Action:  actions.Export,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "output, o", Usage: "Output file path"},
+				cli.BoolFlag{Name: "encrypt", Usage: "Encrypt the bundle with openssl AES-256-CBC"},
+			},
+		},
+		{
 			Name:    "doctor",
 			Aliases: []string{"dr"},
 			Usage:   "Run diagnostics against the SKM environment, agent, and stored keys",
