@@ -8,24 +8,28 @@ import (
 
 func Delete(c *cli.Context) error {
 	env := utils.MustGetEnvironment(c)
-	var alias string
+	keyMap := utils.LoadSSHKeys(env)
 
+	var alias string
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
 	} else {
-		color.Red("%sPlease input key alias name!", utils.CrossSymbol)
-		return nil
+		picked, err := pickKey("Select an SSH key to delete", keyMap)
+		if err != nil {
+			if err == ErrNoKeys {
+				color.Red("%sNo SSH keys to delete", utils.CrossSymbol)
+			}
+			return nil
+		}
+		alias = picked
 	}
 
-	keyMap := utils.LoadSSHKeys(env)
 	key, ok := keyMap[alias]
-
 	if !ok {
 		color.Red("Key alias: %s doesn't exist!", alias)
 		return nil
 	}
 
-	// Set key with related alias as default used key
 	utils.DeleteKey(alias, key, env)
 	return nil
 }

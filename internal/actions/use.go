@@ -6,52 +6,26 @@ import (
 
 	"github.com/TimothyYe/skm/internal/utils"
 	"github.com/fatih/color"
-	"github.com/manifoldco/promptui"
 	"gopkg.in/urfave/cli.v1"
 )
 
 func Use(c *cli.Context) error {
 	env := utils.MustGetEnvironment(c)
-	var alias string
 	keyMap := utils.LoadSSHKeys(env)
 
+	var alias string
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
 	} else {
-		templates := &promptui.SelectTemplates{
-			Active:   "{{ . | white | bgGreen }} ",
-			Inactive: "{{ . }} ",
-			Selected: "{{ . | bold }} ",
-		}
-
-		// Construct prompt menu items
-		var names []string
-
-		for k := range keyMap {
-			names = append(names, k)
-		}
-
-		sort.Strings(names)
-
-		prompt := promptui.Select{
-			Label:     "Please select one SSH key",
-			Items:     names,
-			Templates: templates,
-		}
-
-		_, result, err := prompt.Run()
-
+		picked, err := pickKey("Please select one SSH key", keyMap)
 		if err != nil {
 			return nil
 		}
-
-		alias = result
+		alias = picked
 	}
 
 	// complete match key
-	_, ok := keyMap[alias]
-
-	if !ok {
+	if _, ok := keyMap[alias]; !ok {
 		// partial match key — iterate in sorted order so the result is deterministic
 		names := make([]string, 0, len(keyMap))
 		for k := range keyMap {
@@ -78,12 +52,10 @@ func Use(c *cli.Context) error {
 		}
 	}
 
-	// Set key with related alias as default used key
 	if err := utils.CreateLink(alias, keyMap, env); err != nil {
 		color.Red("%s%s", utils.CrossSymbol, err.Error())
 		return nil
 	}
-	// Run a potential hook
 	utils.RunHook(alias, env)
 	color.Green("Now using SSH key: [%s]", alias)
 	return nil

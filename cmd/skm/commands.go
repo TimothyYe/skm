@@ -61,6 +61,7 @@ func initCommands() []cli.Command {
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "p", Usage: "SSH port"},
 				cli.StringFlag{Name: "key, k", Usage: "Push the key with this alias instead of the active default"},
+				cli.BoolFlag{Name: "pick", Usage: "Interactively pick the key to push"},
 				cli.BoolFlag{Name: "dry-run", Usage: "Print the ssh-copy-id command without executing it"},
 			},
 		},

@@ -68,6 +68,14 @@ func resolveKeyPath(c *cli.Context, env *models.Environment) (string, error) {
 		return key.PrivateKey, nil
 	}
 
+	if c.Bool("pick") {
+		alias, err := pickKey("Select an SSH key to copy", keys)
+		if err != nil {
+			return "", err
+		}
+		return keys[alias].PrivateKey, nil
+	}
+
 	// Find the active default by looking for the SSHKey that LoadSSHKeys
 	// marked as IsDefault. This correctly handles any supported key type,
 	// unlike a hard-coded id_rsa lookup.
