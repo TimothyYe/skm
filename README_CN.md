@@ -1,19 +1,19 @@
 ![](https://raw.githubusercontent.com/TimothyYe/skm/master/assets/snapshots/skm.png)
 
-[![MIT licensed][5]][6] [![LICENSE](https://img.shields.io/badge/license-NPL%20(The%20996%20Prohibited%20License)-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE) [![Build Status][1]][2] [![Go Report Card][7]][8] [![GoCover.io][11]][12] [![GoDoc][9]][10]
+[![MIT licensed][5]][6] [![LICENSE](https://img.shields.io/badge/license-NPL%20(The%20996%20Prohibited%20License)-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE) [![Build Status][1]][2] [![Go Report Card][7]][8] [![Go Reference][9]][10]
 
-[1]: https://travis-ci.org/TimothyYe/skm.svg?branch=master
-[2]: https://travis-ci.org/TimothyYe/skm
+[1]: https://github.com/TimothyYe/skm/actions/workflows/go.yml/badge.svg?branch=master
+[2]: https://github.com/TimothyYe/skm/actions/workflows/go.yml
 [5]: https://img.shields.io/dub/l/vibe-d.svg
 [6]: LICENSE
 [7]: https://goreportcard.com/badge/github.com/timothyye/skm
 [8]: https://goreportcard.com/report/github.com/timothyye/skm
-[9]: https://godoc.org/github.com/TimothyYe/skm?status.svg
-[10]: https://godoc.org/github.com/TimothyYe/skm
-[11]: https://img.shields.io/badge/gocover.io-81.8%25-green.svg
-[12]: https://gocover.io/github.com/timothyye/skm
+[9]: https://pkg.go.dev/badge/github.com/TimothyYe/skm.svg
+[10]: https://pkg.go.dev/github.com/TimothyYe/skm
 
 SKM 是一个简单而强大的 SSH 密钥管理工具。它帮助您轻松管理多个 SSH 密钥！
+
+[English README](README.md)
 
 ![](https://github.com/TimothyYe/skm/blob/master/assets/snapshots/demo.gif?raw=true)
 
@@ -52,7 +52,7 @@ go get github.com/TimothyYe/skm/cmd/skm
 ```bash
 % skm
 
-SKM V0.8.5
+SKM V0.8.8
 https://github.com/TimothyYe/skm
 
 NAME:
@@ -62,10 +62,10 @@ USAGE:
    skm [global options] command [command options] [arguments...]
 
 VERSION:
-   0.8.5
+   0.8.8
 
 COMMANDS:
-     init, i      Initialize SSH keys store for the first time usage.
+     init, i      Initialize SSH keys store for the first time use.
      create, c    Create a new SSH key.
      ls, l        List all the available SSH keys.
      use, u       Set specific SSH key as default by its alias name.
@@ -320,6 +320,10 @@ chmod +x hook
 ```
 
 SKM 将调用这个钩子文件并为您更改 git 全局设置！
+
+## Star 历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=timothyye/skm&type=date&legend=top-left)](https://www.star-history.com/#timothyye/skm&type=date&legend=top-left)
 
 ## 许可证
 
