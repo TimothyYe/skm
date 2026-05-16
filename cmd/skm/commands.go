@@ -90,6 +90,15 @@ func initCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "doctor",
+			Aliases: []string{"dr"},
+			Usage:   "Run diagnostics against the SKM environment, agent, and stored keys",
+			Action:  actions.Doctor,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "json", Usage: "Emit check results as JSON"},
+			},
+		},
+		{
 			Name:   "cache",
 			Usage:  "Add your SSH to SSH agent cache via alias name",
 			Action: actions.Cache,
