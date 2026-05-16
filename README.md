@@ -23,10 +23,15 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Manage all your SSH keys by alias names
 * Choose and set a default SSH key
 * Display public key via alias name
-* Copy default SSH key to a remote host
+* Copy any SSH key to a remote host (with optional `--key`, `--pick`, `--dry-run`)
 * Rename SSH key alias name
 * Backup and restore all your SSH keys
-* Prompt UI for SSH key selection
+* Import an existing key pair from anywhere on disk
+* Export a single key as a (optionally encrypted) bundle
+* Inspect a key with `fingerprint` and `info`
+* Add / rotate / remove a key's passphrase
+* Diagnose your environment with `skm doctor`
+* Prompt UI (with fuzzy search) for SSH key selection across multiple commands
 * Customized SSH key store path
 
 ## Installation
@@ -65,18 +70,24 @@ VERSION:
    0.8.8
 
 COMMANDS:
-     init, i      Initialize SSH keys store for the first time use.
-     create, c    Create a new SSH key.
-     ls, l        List all the available SSH keys.
-     use, u       Set specific SSH key as default by its alias name.
-     delete, d    Delete specific SSH key by alias name.
-     rename, rn   Rename SSH key alias name to a new one.
-     copy, cp     Copy current SSH public key to a remote host.
-     display, dp  Display the current SSH public key or specific SSH public key by alias name.
-     backup, b    Backup all SSH keys to an archive file.
-     restore, r   Restore SSH keys from an existing archive file.
-     cache        Add your SSH to SSH agent cache via alias name.
-     help, h      Shows a list of commands or help for one command.
+     init, i          Initialize SSH keys store for the first time use.
+     create, c        Create a new SSH key.
+     ls, l            List all the available SSH keys.
+     use, u           Set specific SSH key as default by its alias name.
+     delete, d        Delete specific SSH key by alias name.
+     rename, rn       Rename SSH key alias name to a new one.
+     copy, cp         Copy SSH public key to a remote host.
+     display, dp      Display the current SSH public key or specific SSH public key by alias name.
+     backup, b        Backup all SSH keys to an archive file.
+     restore, r       Restore SSH keys from an existing archive file.
+     import, im       Import an existing SSH key pair (or an skm export bundle) into the store.
+     export, ex       Export a single key as a tar.gz bundle (optionally encrypted).
+     fingerprint, fp  Print the SHA256 fingerprint of an SSH key.
+     info, in         Show detailed information about an SSH key.
+     passphrase, pp   Add, rotate, or remove the passphrase on an SSH key.
+     doctor, dr       Run diagnostics against the SKM environment, agent, and stored keys.
+     cache            Add your SSH to SSH agent cache via alias name.
+     help, h          Shows a list of commands or help for one command.
 
 GLOBAL OPTIONS:
    --store-path value   Path where SKM should store its profiles (default: "/Users/timothy/.skm")
@@ -117,14 +128,28 @@ Your public key has been saved in /Users/timothy/.skm/prod/id_rsa.pub.
 ```
 
 ### List SSH keys
+
+The default output is a column-aligned table that includes the key type, bit
+size, fingerprint, whether the key is currently loaded in `ssh-agent`, the
+modification date, and the comment. The active default key is highlighted.
+
 ```bash
 % skm ls
 
 ✔ Found 3 SSH key(s)!
 
-->      default
-        dev
-        prod
+  ALIAS    TYPE     BITS  FINGERPRINT                                         AGENT  CREATED     COMMENT
+* default  ed25519  256   SHA256:pFsC7J7L9L08f3w8uP6ozRaGW5Dg8CdEkP8iVj7++pw  yes    2026-05-16  work@laptop
+  dev      ed25519  256   SHA256:7dFJEj7WGAL8rn9AqLNYdoTQrqgv00kdnqJlufvxgg4  -      2026-05-12  dev
+  prod     rsa      4096  SHA256:DEyhI38hQ5WYABdx9SrJuhqrIyLvfRcZTtzXARuyn0k  -      2026-05-01  prod
+```
+
+Other useful flags:
+
+```bash
+skm ls -q              # quiet — just the alias names, default marked with ->
+skm ls --json          # machine-readable output for scripting
+skm ls -t ed25519      # filter by key type
 ```
 ### Set default SSH key
 ```bash
@@ -160,20 +185,24 @@ Please confirm to delete SSH key [prod] [y/n]: y
 ```
 ### Copy SSH public key to a remote host
 
+By default the currently active key is pushed:
+
 ```bash
 % skm cp timothy@example.com
 
 /usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/Users/timothy/.skm/default/id_rsa.pub"
-/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
-/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
-timothy@example.com's password:
+...
+✔  SSH key copied to remote host
+```
 
-Number of key(s) added:        1
+Useful flags:
 
-Now try logging into the machine, with:   "ssh 'timothy@example.com'"
-and check to make sure that only the key(s) you wanted were added.
-
-✔  Current SSH key already copied to remote host
+```bash
+skm cp --key work timothy@example.com         # push a specific key, not the default
+skm cp --pick timothy@example.com             # interactively choose the key
+skm cp -p 2222 timothy@example.com            # non-default SSH port
+skm cp timothy@[2001:db8::1]:2222             # IPv6 hosts work too
+skm cp --dry-run timothy@example.com          # preview the ssh-copy-id command
 ```
 
 ### Rename a SSH key with a new alias name
@@ -254,6 +283,125 @@ repository $REPO opened successfully, password is correct
 restoring <Snapshot $SNAPSHOT of [/Users/$USER/.skm] at 2018-10-03 19:40:33.333130348 +0200 CEST by $USER@$HOST> to /Users/$USER/.skm
 ✔  Backup restored to /Users/$USER/.skm
 ```
+
+### Import an existing key
+
+Pull an existing key pair from anywhere on disk into the SKM store. The
+matching half of the pair is inferred from the `.pub` suffix; the key type
+is detected from the public key's header.
+
+```bash
+% skm import --alias work ~/old-laptop/.ssh/id_ed25519
+✔ Imported ed25519 key as [work]
+```
+
+`skm import` also accepts an `skm export` bundle (`.tar.gz`, `.tgz`, or
+`.tar.gz.enc`). For encrypted bundles, `openssl` prompts for the passphrase.
+
+```bash
+% skm import ~/skm-work-20260516193629.tar.gz.enc
+enter aes-256-cbc decryption password:
+✔ Imported bundle as [work]
+```
+
+Useful flags:
+
+```bash
+skm import --alias newname bundle.tar.gz      # rename the alias on the way in
+skm import --move ~/old/id_ed25519            # remove the source after a successful copy
+```
+
+> **Note:** put `--alias` / `--move` *before* the path argument — flags placed
+> after the path are not parsed, and SKM will error out with a hint if it
+> sees one.
+
+### Export a single key
+
+Bundle one alias into a portable archive that you can move to another
+machine and import there. The archive contains the private key, the public
+key, and any `hook` file under that alias.
+
+```bash
+% skm export work
+✔ Exported [work] to /Users/timothy/skm-work-20260516193629.tar.gz
+```
+
+Add `--encrypt` to wrap the bundle with `openssl enc -aes-256-cbc -pbkdf2`,
+which prompts for a passphrase:
+
+```bash
+% skm export --encrypt work
+enter aes-256-cbc encryption password:
+Verifying - enter aes-256-cbc encryption password:
+✔ Exported [work] to /Users/timothy/skm-work-20260516193629.tar.gz.enc
+```
+
+You can also specify the output path:
+
+```bash
+skm export -o /tmp/work.tar.gz work
+```
+
+### Inspect a key
+
+```bash
+% skm fingerprint work
+SHA256:pFsC7J7L9L08f3w8uP6ozRaGW5Dg8CdEkP8iVj7++pw
+
+% skm info work
+Alias        work
+Default      yes
+Type         ed25519
+Bits         256
+Fingerprint  SHA256:pFsC7J7L9L08f3w8uP6ozRaGW5Dg8CdEkP8iVj7++pw
+Comment      work@laptop
+In agent     yes
+Private      /Users/timothy/.skm/work/id_ed25519
+Public       /Users/timothy/.skm/work/id_ed25519.pub
+Modified     2026-05-16 19:56:07
+```
+
+Both commands default to the active key when no alias is given.
+
+### Add / rotate / remove a passphrase
+
+`skm passphrase` wraps `ssh-keygen -p`. Use an empty new passphrase at the
+prompt to remove the existing one.
+
+```bash
+% skm passphrase work
+Updating passphrase for [work] (/Users/timothy/.skm/work/id_ed25519)
+Enter new passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved with the new passphrase.
+✔ Passphrase updated for [work]
+```
+
+### Run diagnostics
+
+`skm doctor` walks through the most common environment problems — missing
+SSH binaries, an unreachable `ssh-agent`, unwritable store paths, the
+default key not resolving, RSA keys below 3072 bits, public/private files
+with loose permissions, or hook scripts missing the executable bit.
+
+```bash
+% skm doctor
+  ✔ ssh-keygen available
+  ✔ ssh-add available
+  ✔ ssh-copy-id available
+  ✔ ssh-agent reachable with identities loaded
+  ✔ /Users/timothy/.skm writable (mode -rwxr-xr-x)
+  ✔ /Users/timothy/.ssh writable (mode -rwxr-xr-x)
+  ✔ default key [work] resolves to /Users/timothy/.skm/work/id_ed25519
+  ✔ private key id_ed25519 mode -rw-------
+  ✔ key [work] ed25519/256
+  ✔ hook for [work] is executable
+
+10 passed, 0 warning(s), 0 failure(s)
+```
+
+`skm doctor --json` emits the same checks as a JSON array for scripting.
+Failures cause a non-zero exit; warnings do not.
 
 ### Integrate with SSH agent
 
