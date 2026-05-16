@@ -38,10 +38,19 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 
 #### Homebrew
 
+Starting from **v0.8.9**, `skm` has been officially submitted to the [homebrew-core](https://github.com/Homebrew/homebrew-core) repository, so you can install it directly on both macOS and Linux:
+
 ```bash
-brew tap timothyye/tap
-brew install timothyye/tap/skm
+brew install skm
 ```
+
+> If you previously installed `skm` through the old tap, please remove it first to avoid conflicts:
+>
+> ```bash
+> brew uninstall skm
+> brew untap timothyye/tap
+> brew install skm
+> ```
 
 #### Using Go
 
