@@ -111,6 +111,24 @@ func initCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "fingerprint",
+			Aliases: []string{"fp"},
+			Usage:   "Print the SHA256 fingerprint of an SSH key (default: active key)",
+			Action:  actions.Fingerprint,
+		},
+		{
+			Name:    "info",
+			Aliases: []string{"in"},
+			Usage:   "Show detailed information about an SSH key (default: active key)",
+			Action:  actions.Info,
+		},
+		{
+			Name:    "passphrase",
+			Aliases: []string{"pp"},
+			Usage:   "Add, rotate, or remove the passphrase on an SSH key",
+			Action:  actions.Passphrase,
+		},
+		{
 			Name:    "doctor",
 			Aliases: []string{"dr"},
 			Usage:   "Run diagnostics against the SKM environment, agent, and stored keys",
