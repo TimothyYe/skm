@@ -19,6 +19,10 @@ func Copy(c *cli.Context) error {
 	}
 
 	keyPath := utils.ParsePath(filepath.Join(env.SSHPath, utils.PrivateKey))
+	if keyPath == "" {
+		color.Red("%sNo active SSH key found in %s. Run `skm use <alias>` first.", utils.CrossSymbol, env.SSHPath)
+		return nil
+	}
 	args = append(args, "-i")
 	args = append(args, keyPath)
 	args = append(args, host)

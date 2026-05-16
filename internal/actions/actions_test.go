@@ -246,3 +246,316 @@ func TestCreate_MissingAliasNoop(t *testing.T) {
 		t.Errorf("expected store to be empty, got %d entries", len(entries))
 	}
 }
+
+// seedKey creates a stored key directory with id_rsa / id_rsa.pub under it.
+func seedKey(t *testing.T, env *models.Environment, alias string) {
+	t.Helper()
+	dir := filepath.Join(env.StorePath, alias)
+	if err := os.Mkdir(dir, 0700); err != nil {
+		t.Fatalf("setup %s: %v", alias, err)
+	}
+	writeFile(t, filepath.Join(dir, "id_rsa"), []byte("priv-"+alias))
+	writeFile(t, filepath.Join(dir, "id_rsa.pub"), []byte("pub-"+alias))
+}
+
+// activeAlias returns the alias whose stored private key the ~/.ssh symlink
+// resolves to, or "" if no active symlink is present.
+func activeAlias(t *testing.T, env *models.Environment) string {
+	t.Helper()
+	resolved := utils.ParsePath(filepath.Join(env.SSHPath, utils.PrivateKey))
+	if resolved == "" {
+		return ""
+	}
+	rel, err := filepath.Rel(env.StorePath, resolved)
+	if err != nil {
+		t.Fatalf("rel: %v", err)
+	}
+	return filepath.Dir(rel)
+}
+
+func TestUse_ExactMatch(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "prod-a")
+	seedKey(t, env, "prod-b")
+	seedKey(t, env, "staging")
+
+	c := newContextForArgs(t, env, []string{"staging"})
+	if err := Use(c); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+
+	if got := activeAlias(t, env); got != "staging" {
+		t.Errorf("active alias = %q, want %q", got, "staging")
+	}
+}
+
+func TestUse_UniquePartialMatch(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "prod-a")
+	seedKey(t, env, "staging")
+
+	// "stag" only matches "staging".
+	c := newContextForArgs(t, env, []string{"stag"})
+	if err := Use(c); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+
+	if got := activeAlias(t, env); got != "staging" {
+		t.Errorf("active alias = %q, want %q", got, "staging")
+	}
+}
+
+func TestUse_AmbiguousPartialMatchNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "prod-a")
+	seedKey(t, env, "prod-b")
+
+	// "prod" matches both — must not pick either, must not create symlinks.
+	c := newContextForArgs(t, env, []string{"prod"})
+	if err := Use(c); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+
+	if got := activeAlias(t, env); got != "" {
+		t.Errorf("ambiguous match should not have set an active alias, got %q", got)
+	}
+	if _, err := os.Lstat(filepath.Join(env.SSHPath, utils.PrivateKey)); !os.IsNotExist(err) {
+		t.Error("private key symlink should not exist after ambiguous match")
+	}
+	if _, err := os.Lstat(filepath.Join(env.SSHPath, utils.PublicKey)); !os.IsNotExist(err) {
+		t.Error("public key symlink should not exist after ambiguous match")
+	}
+}
+
+func TestUse_NoMatchNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "prod-a")
+
+	// Pre-existing real key file in ~/.ssh — Use should leave it alone on miss.
+	stray := filepath.Join(env.SSHPath, utils.PrivateKey)
+	writeFile(t, stray, []byte("preexisting"))
+
+	c := newContextForArgs(t, env, []string{"nope"})
+	if err := Use(c); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+
+	// Pre-existing file should remain — CreateLink (which would ClearKey) was never called.
+	got, err := os.ReadFile(stray)
+	if err != nil {
+		t.Fatalf("read stray: %v", err)
+	}
+	if string(got) != "preexisting" {
+		t.Errorf("pre-existing key was modified: got %q", string(got))
+	}
+}
+
+func TestUse_PartialMatchDeterministic(t *testing.T) {
+	// Same inputs across runs must resolve to the same alias.
+	// "alpha" appears in both "alpha-1" and "zalpha", and sorted order
+	// guarantees "alpha-1" is the chosen match.
+	for range 5 {
+		env := setupEnvironment(t)
+		seedKey(t, env, "zalpha")
+		seedKey(t, env, "alpha-1")
+
+		c := newContextForArgs(t, env, []string{"alph"})
+		if err := Use(c); err != nil {
+			tearDownEnvironment(t, env)
+			t.Fatalf("Use: %v", err)
+		}
+
+		// "alph" is a substring of both — ambiguous → no symlink.
+		if got := activeAlias(t, env); got != "" {
+			tearDownEnvironment(t, env)
+			t.Fatalf("ambiguous input should not resolve, got %q", got)
+		}
+		tearDownEnvironment(t, env)
+	}
+}
+
+// newContextWithBoolFlags returns a cli.Context with string flags for the
+// store/ssh paths and any number of named bool flags pre-set to true.
+func newContextWithBoolFlags(t *testing.T, env *models.Environment, positionalArgs []string, trueBools ...string) *cli.Context {
+	t.Helper()
+	flags := flag.NewFlagSet("", flag.ContinueOnError)
+	flags.String("ssh-path", env.SSHPath, "")
+	flags.String("store-path", env.StorePath, "")
+	for _, name := range trueBools {
+		flags.Bool(name, true, "")
+	}
+	if err := flags.Parse(positionalArgs); err != nil {
+		t.Fatalf("flag parse: %v", err)
+	}
+	return cli.NewContext(nil, flags, nil)
+}
+
+// ----- List -----
+
+func TestList_EmptyStore(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	c := newContextForArgs(t, env, nil)
+	if err := List(c); err != nil {
+		t.Fatalf("List: %v", err)
+	}
+}
+
+func TestList_WithKeys(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+	seedKey(t, env, "beta")
+
+	c := newContextForArgs(t, env, nil)
+	if err := List(c); err != nil {
+		t.Fatalf("List: %v", err)
+	}
+}
+
+// ----- Display -----
+
+func TestDisplay_UnknownAliasErrors(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+
+	c := newContextForArgs(t, env, []string{"missing"})
+	if err := Display(c); err == nil {
+		t.Error("expected error for unknown alias")
+	}
+}
+
+func TestDisplay_KnownAliasSucceeds(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+
+	c := newContextForArgs(t, env, []string{"alpha"})
+	if err := Display(c); err != nil {
+		t.Fatalf("Display: %v", err)
+	}
+}
+
+func TestDisplay_NoArgNoDefaultIsNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	// Stored key exists, but no symlink in ~/.ssh → no IsDefault key → silent return.
+	seedKey(t, env, "alpha")
+
+	c := newContextForArgs(t, env, nil)
+	if err := Display(c); err != nil {
+		t.Fatalf("Display: %v", err)
+	}
+}
+
+// ----- Cache -----
+
+func TestCache_NoFlagReturnsError(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	c := newContextForArgs(t, env, []string{"alpha"})
+	if err := Cache(c); err == nil {
+		t.Error("expected error when no add/del/list flag is set")
+	}
+}
+
+func TestCache_AddUnknownAliasNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	// No stored aliases → AddCache returns "not found" before invoking ssh-add.
+	c := newContextWithBoolFlags(t, env, []string{"missing"}, "add")
+	if err := Cache(c); err != nil {
+		t.Fatalf("Cache: %v", err)
+	}
+}
+
+func TestCache_DelUnknownAliasNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	c := newContextWithBoolFlags(t, env, []string{"missing"}, "del")
+	if err := Cache(c); err != nil {
+		t.Fatalf("Cache: %v", err)
+	}
+}
+
+// ----- Copy -----
+
+func TestCopy_NoActiveKeyReturnsEarly(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	// No symlink in ~/.ssh → guard kicks in, ssh-copy-id is not invoked.
+	c := newContextForArgs(t, env, []string{"user@host"}, "p")
+	if err := Copy(c); err != nil {
+		t.Fatalf("Copy: %v", err)
+	}
+}
+
+// ----- Delete -----
+
+func TestDelete_NoArgsNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+
+	c := newContextForArgs(t, env, nil)
+	if err := Delete(c); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	// Stored alias must remain.
+	if _, err := os.Stat(filepath.Join(env.StorePath, "alpha")); err != nil {
+		t.Errorf("alpha should still exist: %v", err)
+	}
+}
+
+func TestDelete_UnknownAliasNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+
+	c := newContextForArgs(t, env, []string{"missing"})
+	if err := Delete(c); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(env.StorePath, "alpha")); err != nil {
+		t.Errorf("alpha should still exist: %v", err)
+	}
+}
+
+// ----- Rename failure cases -----
+
+func TestRename_NonexistentSourceNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	// "before" does not exist — os.Rename will fail, action prints error and returns nil.
+	c := newContextForArgs(t, env, []string{"before", "after"})
+	if err := Rename(c); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(env.StorePath, "after")); !os.IsNotExist(err) {
+		t.Error("target alias should not exist when source is missing")
+	}
+}

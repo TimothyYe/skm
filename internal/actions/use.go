@@ -52,25 +52,37 @@ func Use(c *cli.Context) error {
 	_, ok := keyMap[alias]
 
 	if !ok {
-		// partial match key
-		canPartialMatch := false
+		// partial match key — iterate in sorted order so the result is deterministic
+		names := make([]string, 0, len(keyMap))
+		for k := range keyMap {
+			names = append(names, k)
+		}
+		sort.Strings(names)
 
-		for k, _ := range keyMap {
-			if strings.Index(k, alias) >= 0 {
-				alias = k
-				canPartialMatch = true
-				break
+		var matches []string
+		for _, k := range names {
+			if strings.Contains(k, alias) {
+				matches = append(matches, k)
 			}
 		}
 
-		if !canPartialMatch {
+		switch len(matches) {
+		case 0:
 			color.Red("Key alias: %s doesn't exist!", alias)
+			return nil
+		case 1:
+			alias = matches[0]
+		default:
+			color.Red("Key alias: %s is ambiguous, matches: %s", alias, strings.Join(matches, ", "))
 			return nil
 		}
 	}
 
 	// Set key with related alias as default used key
-	utils.CreateLink(alias, keyMap, env)
+	if err := utils.CreateLink(alias, keyMap, env); err != nil {
+		color.Red("%s%s", utils.CrossSymbol, err.Error())
+		return nil
+	}
 	// Run a potential hook
 	utils.RunHook(alias, env)
 	color.Green("Now using SSH key: [%s]", alias)

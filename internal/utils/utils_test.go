@@ -112,7 +112,9 @@ func TestLoadSSHKeys(t *testing.T) {
 func TestClearKey(t *testing.T) {
 	env := setupTestEnvironment(t)
 	defer tearDownTestEnvironment(t, env)
-	ClearKey(env)
+	if err := ClearKey(env); err != nil {
+		t.Fatalf("ClearKey returned error: %v", err)
+	}
 
 	PublicKeyPath := filepath.Join(env.SSHPath, PublicKey)
 	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
@@ -162,7 +164,9 @@ func TestCreateLink(t *testing.T) {
 	env := setupTestEnvironment(t)
 	defer tearDownTestEnvironment(t, env)
 
-	CreateLink("abc", nil, env)
+	if err := CreateLink("abc", nil, env); err == nil {
+		t.Error("expected error for unknown alias")
+	}
 
 	PublicKeyPath := filepath.Join(env.SSHPath, PublicKey)
 	if _, err := os.Stat(PublicKeyPath); !os.IsNotExist(err) {
@@ -289,7 +293,9 @@ func TestCreateLink_CreatesSymlinks(t *testing.T) {
 	mustWriteFile(t, pub, "pub")
 
 	keys := LoadSSHKeys(env)
-	CreateLink(alias, keys, env)
+	if err := CreateLink(alias, keys, env); err != nil {
+		t.Fatalf("CreateLink returned error: %v", err)
+	}
 
 	for filename, target := range map[string]string{
 		"id_rsa":     priv,
@@ -317,7 +323,9 @@ func TestCreateLink_UnknownAliasClearsExisting(t *testing.T) {
 	// Drop a stand-in key into ~/.ssh that should be wiped by ClearKey.
 	mustWriteFile(t, filepath.Join(env.SSHPath, PrivateKey), "existing")
 
-	CreateLink("does-not-exist", map[string]*models.SSHKey{}, env)
+	if err := CreateLink("does-not-exist", map[string]*models.SSHKey{}, env); err == nil {
+		t.Error("expected error for unknown alias")
+	}
 
 	if _, err := os.Stat(filepath.Join(env.SSHPath, PrivateKey)); !os.IsNotExist(err) {
 		t.Error("ClearKey should run even when the requested alias is missing")

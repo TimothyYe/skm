@@ -60,7 +60,10 @@ func Initialize(c *cli.Context) error {
 			keyMap := utils.LoadSSHKeys(env)
 
 			// Create symbol link
-			utils.CreateLink(utils.DefaultKey, keyMap, env)
+			if err := utils.CreateLink(utils.DefaultKey, keyMap, env); err != nil {
+				color.Red("%s%s", utils.CrossSymbol, err.Error())
+				return nil
+			}
 			break
 		}
 	}

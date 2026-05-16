@@ -59,16 +59,21 @@ func Execute(workDir, script string, args ...string) bool {
 }
 
 // ClearKey clears both private & public keys from SSH key path
-func ClearKey(env *models.Environment) {
+func ClearKey(env *models.Environment) error {
 	for _, kt := range models.SupportedKeyTypes {
 		// Remove private key if exists
-		PrivateKeyPath := filepath.Join(env.SSHPath, kt.PrivateKey())
-		os.Remove(PrivateKeyPath)
+		privateKeyPath := filepath.Join(env.SSHPath, kt.PrivateKey())
+		if err := os.Remove(privateKeyPath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove %s: %w", privateKeyPath, err)
+		}
 
 		// Remove public key if exists
-		PublicKeyPath := filepath.Join(env.SSHPath, kt.PublicKey())
-		os.Remove(PublicKeyPath)
+		publicKeyPath := filepath.Join(env.SSHPath, kt.PublicKey())
+		if err := os.Remove(publicKeyPath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove %s: %w", publicKeyPath, err)
+		}
 	}
+	return nil
 }
 
 // DeleteKey delete key by its alias name
@@ -97,7 +102,10 @@ func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, forTes
 
 	if input == "y" {
 		if inUse {
-			ClearKey(env)
+			if err := ClearKey(env); err != nil {
+				color.Red("%s%s", CrossSymbol, err.Error())
+				return
+			}
 		}
 
 		//Remove specified key by alias name
@@ -132,7 +140,7 @@ func AddCache(alias string, keyMap map[string]*models.SSHKey, env *models.Enviro
 	result := Execute("", "ssh-add", args...)
 
 	if !result {
-		return errors.New("Failed to remove SSH key from cache")
+		return errors.New("Failed to add SSH key to cache")
 	}
 
 	return nil
@@ -171,31 +179,33 @@ func ListCache() error {
 }
 
 // CreateLink creates symbol link for specified SSH key
-func CreateLink(alias string, keyMap map[string]*models.SSHKey, env *models.Environment) {
-	ClearKey(env)
+func CreateLink(alias string, keyMap map[string]*models.SSHKey, env *models.Environment) error {
+	if err := ClearKey(env); err != nil {
+		return err
+	}
 
 	key, found := keyMap[alias]
 
 	if !found {
-		return
+		return fmt.Errorf("SSH key [%s] not found", alias)
 	}
 
 	relStorePath, err := filepath.Rel(env.SSHPath, env.StorePath)
 	if err != nil {
-		color.Red("%sFailed to find rel store path", CrossSymbol)
+		return fmt.Errorf("failed to find rel store path: %w", err)
 	}
 
 	//Create symlink for private key
 	if err := os.Symlink(filepath.Join(relStorePath, alias, key.Type.PrivateKey()), filepath.Join(env.SSHPath, key.Type.PrivateKey())); err != nil {
-		color.Red("%sFailed to create symbol link for private key", CrossSymbol)
-		return
+		return fmt.Errorf("failed to create symbol link for private key: %w", err)
 	}
 
 	//Create symlink for public key
 	if err := os.Symlink(filepath.Join(relStorePath, alias, key.Type.PublicKey()), filepath.Join(env.SSHPath, key.Type.PublicKey())); err != nil {
-		color.Red("%sFailed to create symbol link for public key", CrossSymbol)
-		return
+		return fmt.Errorf("failed to create symbol link for public key: %w", err)
 	}
+
+	return nil
 }
 
 func loadSingleKey(keyPath string, env *models.Environment) *models.SSHKey {
