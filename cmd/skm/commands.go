@@ -56,10 +56,12 @@ func initCommands() []cli.Command {
 		{
 			Name:    "copy",
 			Aliases: []string{"cp"},
-			Usage:   "Copy current SSH public key to a remote host",
+			Usage:   "Copy SSH public key to a remote host",
 			Action:  actions.Copy,
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "p", Usage: "SSH port"},
+				cli.StringFlag{Name: "key, k", Usage: "Push the key with this alias instead of the active default"},
+				cli.BoolFlag{Name: "dry-run", Usage: "Print the ssh-copy-id command without executing it"},
 			},
 		},
 		{

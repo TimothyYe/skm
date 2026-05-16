@@ -508,6 +508,93 @@ func TestCopy_NoActiveKeyReturnsEarly(t *testing.T) {
 	}
 }
 
+func TestSplitHostPort(t *testing.T) {
+	cases := []struct {
+		in       string
+		wantHost string
+		wantPort string
+		wantErr  bool
+	}{
+		{"host", "host", "", false},
+		{"user@host", "user@host", "", false},
+		{"host:22", "host", "22", false},
+		{"user@host:22", "user@host", "22", false},
+		{"192.0.2.1", "192.0.2.1", "", false},
+		{"192.0.2.1:2222", "192.0.2.1", "2222", false},
+		{"2001:db8::1", "2001:db8::1", "", false},
+		{"user@2001:db8::1", "user@2001:db8::1", "", false},
+		{"[2001:db8::1]:2222", "2001:db8::1", "2222", false},
+		{"user@[2001:db8::1]:2222", "user@2001:db8::1", "2222", false},
+		{"user@[2001:db8::1]", "user@2001:db8::1", "", false},
+		{"[2001:db8::1", "", "", true},          // missing closing bracket
+		{"[2001:db8::1]2222", "", "", true},     // missing colon after bracket
+	}
+	for _, tc := range cases {
+		gotHost, gotPort, err := splitHostPort(tc.in)
+		if (err != nil) != tc.wantErr {
+			t.Errorf("splitHostPort(%q) error = %v, wantErr %v", tc.in, err, tc.wantErr)
+			continue
+		}
+		if err != nil {
+			continue
+		}
+		if gotHost != tc.wantHost || gotPort != tc.wantPort {
+			t.Errorf("splitHostPort(%q) = (%q, %q), want (%q, %q)",
+				tc.in, gotHost, gotPort, tc.wantHost, tc.wantPort)
+		}
+	}
+}
+
+func TestCopy_DryRunDoesNotInvokeSSHCopyID(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	// Seed a stored key and symlink it as the active default.
+	seedKey(t, env, "alpha")
+	src := filepath.Join(env.StorePath, "alpha", "id_rsa")
+	if err := os.Symlink(src, filepath.Join(env.SSHPath, "id_rsa")); err != nil {
+		t.Fatalf("setup symlink: %v", err)
+	}
+
+	flags := flag.NewFlagSet("", flag.ContinueOnError)
+	flags.String("ssh-path", env.SSHPath, "")
+	flags.String("store-path", env.StorePath, "")
+	flags.String("p", "", "")
+	flags.String("key", "", "")
+	flags.Bool("dry-run", true, "")
+	if err := flags.Parse([]string{"user@host"}); err != nil {
+		t.Fatalf("flag parse: %v", err)
+	}
+	c := cli.NewContext(nil, flags, nil)
+
+	// If dry-run failed to short-circuit, ssh-copy-id would attempt to talk to
+	// a real "host" and almost certainly hang or error here.
+	if err := Copy(c); err != nil {
+		t.Fatalf("Copy: %v", err)
+	}
+}
+
+func TestCopy_UnknownKeyAliasReturnsEarly(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	flags := flag.NewFlagSet("", flag.ContinueOnError)
+	flags.String("ssh-path", env.SSHPath, "")
+	flags.String("store-path", env.StorePath, "")
+	flags.String("p", "", "")
+	flags.String("key", "missing", "")
+	flags.Bool("dry-run", false, "")
+	if err := flags.Parse([]string{"user@host"}); err != nil {
+		t.Fatalf("flag parse: %v", err)
+	}
+	c := cli.NewContext(nil, flags, nil)
+
+	// Unknown alias → resolveKeyPath errors → ssh-copy-id is not invoked.
+	if err := Copy(c); err != nil {
+		t.Fatalf("Copy: %v", err)
+	}
+}
+
 // ----- Delete -----
 
 func TestDelete_NoArgsNoop(t *testing.T) {
