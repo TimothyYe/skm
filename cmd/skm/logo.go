@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	// Version is the default version of SKM
-	Version = "0.8.1"
+	// Version is set via -ldflags for release builds; "dev" otherwise.
+	Version = "dev"
 	logo    = `
 
 ███████╗██╗  ██╗███╗   ███╗
