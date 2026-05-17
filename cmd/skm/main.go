@@ -47,7 +47,7 @@ func main() {
 	}
 	app.Name = utils.Name
 	app.Usage = utils.Usage
-	app.Version = Version
+	app.Version = version()
 	app.Commands = initCommands()
 	if err := app.Run(os.Args); err != nil {
 		fmt.Println("Failed to run skm:", err)
