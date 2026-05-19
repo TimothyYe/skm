@@ -31,6 +31,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Inspect a key with `fingerprint` and `info`
 * Add / rotate / remove a key's passphrase
 * Diagnose your environment with `skm doctor`
+* Audit stored keys for weak strength, missing passphrases, and age with `skm audit`
 * Prompt UI (with fuzzy search) for SSH key selection across multiple commands
 * Customized SSH key store path
 
@@ -95,6 +96,7 @@ COMMANDS:
      info, in         Show detailed information about an SSH key.
      passphrase, pp   Add, rotate, or remove the passphrase on an SSH key.
      doctor, dr       Run diagnostics against the SKM environment, agent, and stored keys.
+     audit, au        Audit stored keys for weak strength, missing passphrases, and age.
      cache            Add your SSH to SSH agent cache via alias name.
      help, h          Shows a list of commands or help for one command.
 
@@ -411,6 +413,38 @@ with loose permissions, or hook scripts missing the executable bit.
 
 `skm doctor --json` emits the same checks as a JSON array for scripting.
 Failures cause a non-zero exit; warnings do not.
+
+### Audit your keys
+
+Where `doctor` inspects the environment, `skm audit` (alias `au`) inspects the
+keys themselves. It walks every key in the store and reports:
+
+* RSA keys below `--rsa-min` (default 3072) — **failure**
+* Private keys with no passphrase — **warning**
+* Keys older than `--max-age` (default `1y`, accepts `Nd|Nw|Nm|Ny`) — **warning**
+
+```bash
+% skm audit
+[legacy]
+  ✖ strength: RSA-1024 is below the 3072-bit minimum
+      hint: Rotate with `skm create legacy -t ed25519` (or RSA >= 3072)
+  ! passphrase: private key is not protected by a passphrase
+      hint: Add one with `skm passphrase legacy`
+  ! age: key is 2y old (threshold 1y)
+      hint: Consider rotating with `skm create` + `skm copy`
+
+1 clean, 0 with warnings, 1 with failures (of 2 key(s))
+```
+
+Flags:
+
+* `--json` — emit findings as a JSON array for tooling
+* `--strict` — promote warnings to failures (useful in CI)
+* `--max-age <duration>` — override the age threshold (e.g. `30d`, `6m`)
+* `--rsa-min <bits>` — override the minimum acceptable RSA key size
+
+Audit exits non-zero on any failure-level finding; warnings alone return 0
+unless `--strict` is set.
 
 ### Integrate with SSH agent
 
