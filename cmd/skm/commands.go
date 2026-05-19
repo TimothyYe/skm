@@ -138,6 +138,18 @@ func initCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "audit",
+			Aliases: []string{"au"},
+			Usage:   "Audit stored keys for weak strength, missing passphrases, and age",
+			Action:  actions.Audit,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "json", Usage: "Emit findings as JSON"},
+				cli.BoolFlag{Name: "strict", Usage: "Treat warnings as failures (exit non-zero)"},
+				cli.StringFlag{Name: "max-age", Value: "1y", Usage: "Flag keys older than this (e.g. 30d, 6m, 1y)"},
+				cli.IntFlag{Name: "rsa-min", Value: 3072, Usage: "Minimum acceptable RSA key size in bits"},
+			},
+		},
+		{
 			Name:   "cache",
 			Usage:  "Add your SSH to SSH agent cache via alias name",
 			Action: actions.Cache,
