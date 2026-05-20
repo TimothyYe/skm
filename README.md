@@ -34,6 +34,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Audit stored keys for weak strength, missing passphrases, and age with `skm audit`
 * Prompt UI (with fuzzy search) for SSH key selection across multiple commands
 * Customized SSH key store path
+* Pluggable hooks on `post-use`, `post-create`, `pre-delete`, `post-copy` events (per-key and global)
 
 ## Installation
 
@@ -488,31 +489,96 @@ SKM_STORE_PATH=/usr/local/.skm
 
 ### Hook mechanism
 
-Edit and place a executable file named ```hook``` at the specified key directory, for example:
+SKM fires hook scripts around key-lifecycle events. Hooks are ordinary executables (binary or script) that you drop into a known location; SKM picks them up automatically.
+
+#### Events
+
+| Event         | When it fires                              | Failure behavior              |
+| ------------- | ------------------------------------------ | ----------------------------- |
+| `post-use`    | After switching the default SSH key        | Best-effort (warning only)    |
+| `post-create` | After `skm create` succeeds                | Best-effort (warning only)    |
+| `pre-delete`  | After you confirm a delete, before removal | **Non-zero exit aborts the delete** |
+| `post-copy`   | After `skm copy` (ssh-copy-id) succeeds    | Best-effort (warning only)    |
+
+#### Where to put hook scripts
+
+Two scopes; both fire (global first, then per-key):
 
 ```bash
-~/.skm/prod/hook
+~/.skm/hooks/<event>              # global — runs for any alias
+~/.skm/<alias>/hooks/<event>      # per-key — runs only for that alias
 ```
 
-This hook file can be both an executable binary file or an executable script file.
+For example:
 
-SKM will call this hook file after switching default SSH key to it, you can do some stuff in this hook file. 
+```bash
+~/.skm/hooks/pre-delete           # global guard for every delete
+~/.skm/work/hooks/post-use        # only when switching to "work"
+~/.skm/prod/hooks/post-copy       # only after copying the "prod" key
+```
 
-For example, if you want to use different git username & email after you switch to use a different SSH key, you can create one hook file, and put shell commands in it:
+The legacy `~/.skm/<alias>/hook` file is still honored as a `post-use` hook for backward compatibility.
+
+Don't forget to make scripts executable:
+
+```bash
+chmod +x ~/.skm/work/hooks/post-use
+```
+
+#### Environment variables passed to hooks
+
+Every hook receives these in its environment:
+
+| Variable           | Description                                      |
+| ------------------ | ------------------------------------------------ |
+| `SKM_EVENT`        | The event name (`post-use`, `pre-delete`, …)     |
+| `SKM_ALIAS`        | The alias name (also passed as `$1`)             |
+| `SKM_STORE_PATH`   | The SKM store path                               |
+| `SKM_SSH_PATH`     | The user's `~/.ssh` path                         |
+| `SKM_KEY_TYPE`     | `rsa`, `ed25519`, …                              |
+| `SKM_PRIVATE_KEY`  | Absolute path to the private key                 |
+| `SKM_PUBLIC_KEY`   | Absolute path to the public key                  |
+
+Event-specific extras:
+
+| Event       | Extra variables                          |
+| ----------- | ---------------------------------------- |
+| `post-copy` | `SKM_REMOTE_HOST`, `SKM_REMOTE_PORT`     |
+
+#### Example: switch git identity on `post-use`
 
 ```bash
 #!/bin/bash
-git config --global user.name "YourNewName"
-git config --global user.email "YourNewEmail@example.com"
+# ~/.skm/work/hooks/post-use
+git config --global user.name  "Your Work Name"
+git config --global user.email "you@work.example.com"
 ```
 
-Then make this hook file executable:
+#### Example: log every key deployment via `post-copy`
 
 ```bash
-chmod +x hook
+#!/bin/sh
+# ~/.skm/hooks/post-copy
+echo "$(date -Iseconds) $SKM_ALIAS -> $SKM_REMOTE_HOST:${SKM_REMOTE_PORT:-22}" \
+  >> ~/.skm/deployments.log
 ```
 
-SKM will call this hook file and change git global settings for you!
+#### Example: guard production keys against accidental delete
+
+```bash
+#!/bin/sh
+# ~/.skm/prod/hooks/pre-delete — non-zero exit aborts the delete
+echo "Refusing to delete production key. Remove this hook first." >&2
+exit 1
+```
+
+#### Inspect configured hooks
+
+```bash
+skm hook ls              # global hooks
+skm hook ls <alias>      # global + per-key for one alias
+skm hook ls --all        # global + per-key for every alias
+```
 
 ## Star History
 

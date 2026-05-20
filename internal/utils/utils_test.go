@@ -369,6 +369,228 @@ func TestDeleteKey_InUseClearsSshSymlinks(t *testing.T) {
 	}
 }
 
+// writeHook drops an executable hook script at path that, when run, writes
+// its $SKM_EVENT/$SKM_ALIAS/$1 to logFile so the test can verify it fired.
+// extraExit is appended verbatim to the script body, letting individual tests
+// force a non-zero exit.
+func writeHook(t *testing.T, path, logFile, extraExit string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatalf("mkdir hook dir: %v", err)
+	}
+	body := "#!/bin/sh\n" +
+		"printf '%s %s %s\\n' \"$SKM_EVENT\" \"$SKM_ALIAS\" \"$1\" >> " + logFile + "\n" +
+		extraExit
+	if err := os.WriteFile(path, []byte(body), 0755); err != nil {
+		t.Fatalf("write hook: %v", err)
+	}
+}
+
+func readLog(t *testing.T, path string) string {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return ""
+	}
+	if err != nil {
+		t.Fatalf("read log: %v", err)
+	}
+	return string(b)
+}
+
+func TestRunHook_LegacyPostUseStillRuns(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "legacy"
+	if err := os.MkdirAll(filepath.Join(env.StorePath, alias), 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	log := filepath.Join(env.StorePath, "fired.log")
+	writeHook(t, filepath.Join(env.StorePath, alias, HookName), log, "")
+
+	if err := RunHook(EventPostUse, alias, env); err != nil {
+		t.Fatalf("RunHook returned error: %v", err)
+	}
+	got := readLog(t, log)
+	want := "post-use legacy legacy\n"
+	if got != want {
+		t.Errorf("legacy hook output: got %q want %q", got, want)
+	}
+}
+
+func TestRunHook_PerKeyEventFires(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "k1"
+	log := filepath.Join(env.StorePath, "fired.log")
+	writeHook(t, filepath.Join(env.StorePath, alias, HooksDir, EventPostCreate), log, "")
+
+	if err := RunHook(EventPostCreate, alias, env); err != nil {
+		t.Fatalf("RunHook: %v", err)
+	}
+	if got := readLog(t, log); got != "post-create k1 k1\n" {
+		t.Errorf("unexpected log: %q", got)
+	}
+}
+
+func TestRunHook_GlobalFiresWhenPerKeyAbsent(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	log := filepath.Join(env.StorePath, "fired.log")
+	writeHook(t, filepath.Join(env.StorePath, HooksDir, EventPostUse), log, "")
+
+	if err := RunHook(EventPostUse, "anything", env); err != nil {
+		t.Fatalf("RunHook: %v", err)
+	}
+	if got := readLog(t, log); got != "post-use anything anything\n" {
+		t.Errorf("unexpected log: %q", got)
+	}
+}
+
+func TestRunHook_GlobalAndPerKeyBothFire(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "both"
+	if err := os.MkdirAll(filepath.Join(env.StorePath, alias), 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	log := filepath.Join(env.StorePath, "fired.log")
+	// Global hook tags its line "G", per-key tags "K", so the ordering is
+	// observable in the log.
+	writeGlobal := "#!/bin/sh\necho G $SKM_EVENT $SKM_ALIAS >> " + log + "\n"
+	writePerKey := "#!/bin/sh\necho K $SKM_EVENT $SKM_ALIAS >> " + log + "\n"
+	if err := os.MkdirAll(filepath.Join(env.StorePath, HooksDir), 0700); err != nil {
+		t.Fatalf("mkdir global: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(env.StorePath, HooksDir, EventPostUse), []byte(writeGlobal), 0755); err != nil {
+		t.Fatalf("write global: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(env.StorePath, alias, HooksDir), 0700); err != nil {
+		t.Fatalf("mkdir perkey: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(env.StorePath, alias, HooksDir, EventPostUse), []byte(writePerKey), 0755); err != nil {
+		t.Fatalf("write perkey: %v", err)
+	}
+
+	if err := RunHook(EventPostUse, alias, env); err != nil {
+		t.Fatalf("RunHook: %v", err)
+	}
+	got := readLog(t, log)
+	want := "G post-use both\nK post-use both\n"
+	if got != want {
+		t.Errorf("ordering wrong:\n got: %q\nwant: %q", got, want)
+	}
+}
+
+func TestRunHook_NonExecutableSkippedNoError(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "noexec"
+	dir := filepath.Join(env.StorePath, alias, HooksDir)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, EventPostUse), []byte("#!/bin/sh\necho hi\n"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	if err := RunHook(EventPostUse, alias, env); err != nil {
+		t.Errorf("non-executable hook should be silently skipped, got: %v", err)
+	}
+}
+
+func TestRunHook_PreEventAbortsOnNonZeroExit(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "veto"
+	if err := os.MkdirAll(filepath.Join(env.StorePath, alias), 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	log := filepath.Join(env.StorePath, "fired.log")
+	writeHook(t, filepath.Join(env.StorePath, alias, HooksDir, EventPreDelete), log, "exit 7\n")
+
+	err := RunHook(EventPreDelete, alias, env)
+	if err == nil {
+		t.Fatal("expected error from failing pre-delete hook")
+	}
+	if !strings.Contains(err.Error(), "pre-delete") {
+		t.Errorf("error should mention event: %v", err)
+	}
+}
+
+func TestRunHook_PostEventSwallowsFailure(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "boom"
+	if err := os.MkdirAll(filepath.Join(env.StorePath, alias), 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	log := filepath.Join(env.StorePath, "fired.log")
+	writeHook(t, filepath.Join(env.StorePath, alias, HooksDir, EventPostUse), log, "exit 3\n")
+
+	if err := RunHook(EventPostUse, alias, env); err != nil {
+		t.Errorf("post-* hook failures must not propagate: %v", err)
+	}
+}
+
+func TestRunHook_ExtraEnvIsPassed(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "ctx"
+	if err := os.MkdirAll(filepath.Join(env.StorePath, alias), 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	log := filepath.Join(env.StorePath, "fired.log")
+	body := "#!/bin/sh\necho \"$SKM_REMOTE_HOST $SKM_REMOTE_PORT\" >> " + log + "\n"
+	dir := filepath.Join(env.StorePath, alias, HooksDir)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, EventPostCopy), []byte(body), 0755); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	if err := RunHook(EventPostCopy, alias, env, "SKM_REMOTE_HOST", "h.example", "SKM_REMOTE_PORT", "2222"); err != nil {
+		t.Fatalf("RunHook: %v", err)
+	}
+	if got := readLog(t, log); got != "h.example 2222\n" {
+		t.Errorf("extra env not propagated: %q", got)
+	}
+}
+
+func TestDeleteKey_PreDeleteHookCanAbort(t *testing.T) {
+	env := setupTestEnvironment(t)
+	defer tearDownTestEnvironment(t, env)
+
+	alias := "guarded"
+	dir := filepath.Join(env.StorePath, alias)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	mustWriteFile(t, filepath.Join(dir, "id_rsa"), "priv")
+	mustWriteFile(t, filepath.Join(dir, "id_rsa.pub"), "pub")
+	log := filepath.Join(env.StorePath, "fired.log")
+	writeHook(t, filepath.Join(dir, HooksDir, EventPreDelete), log, "exit 1\n")
+
+	key := &models.SSHKey{
+		PrivateKey: filepath.Join(dir, "id_rsa"),
+		PublicKey:  filepath.Join(dir, "id_rsa.pub"),
+	}
+	DeleteKey(alias, key, env, true)
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		t.Error("pre-delete hook returned non-zero; alias directory must survive")
+	}
+}
+
 func mustWriteFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0600); err != nil {

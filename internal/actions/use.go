@@ -56,7 +56,7 @@ func Use(c *cli.Context) error {
 		color.Red("%s%s", utils.CrossSymbol, err.Error())
 		return nil
 	}
-	utils.RunHook(alias, env)
+	_ = utils.RunHook(utils.EventPostUse, alias, env)
 	color.Green("Now using SSH key: [%s]", alias)
 	return nil
 }

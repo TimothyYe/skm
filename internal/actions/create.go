@@ -87,5 +87,6 @@ func Create(c *cli.Context) error {
 		return nil
 	}
 	color.Green("%sSSH key [%s] created!", utils.CheckSymbol, alias)
+	_ = utils.RunHook(utils.EventPostCreate, alias, env)
 	return nil
 }

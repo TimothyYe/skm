@@ -34,9 +34,27 @@ const (
 	// DefaultKey is the default alias name of SSH key
 	DefaultKey = "default"
 
-	// HookName is the name of a hook that is called when present after using a key
+	// HookName is the legacy single-file hook (treated as post-use).
 	HookName = "hook"
+	// HooksDir is the directory holding event-named hook scripts.
+	HooksDir = "hooks"
 )
+
+// Hook event names.
+const (
+	EventPostUse    = "post-use"
+	EventPostCreate = "post-create"
+	EventPreDelete  = "pre-delete"
+	EventPostCopy   = "post-copy"
+)
+
+// KnownHookEvents lists every event SKM may fire. Used by `skm hook ls` and tests.
+var KnownHookEvents = []string{
+	EventPostUse,
+	EventPostCreate,
+	EventPreDelete,
+	EventPostCopy,
+}
 
 // Execute executes shell commands with arguments
 func Execute(workDir, script string, args ...string) bool {
@@ -101,6 +119,11 @@ func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, forTes
 	}
 
 	if input == "y" {
+		if err := RunHook(EventPreDelete, alias, env); err != nil {
+			color.Red("%spre-delete hook aborted deletion of [%s]: %s", CrossSymbol, alias, err.Error())
+			return
+		}
+
 		if inUse {
 			if err := ClearKey(env); err != nil {
 				color.Red("%s%s", CrossSymbol, err.Error())
@@ -117,13 +140,99 @@ func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, forTes
 	}
 }
 
-// RunHook runs hook file after switching SSH key
-func RunHook(alias string, env *models.Environment) {
-	if info, err := os.Stat(filepath.Join(env.StorePath, alias, HookName)); !os.IsNotExist(err) {
-		if info.Mode()&0111 != 0 {
-			Execute("", filepath.Join(env.StorePath, alias, HookName), alias)
+// RunHook executes any hook scripts registered for the given event.
+//
+// Lookup order: global ~/<store>/hooks/<event> first, then per-key
+// ~/<store>/<alias>/hooks/<event>. For backward compatibility, the legacy
+// per-key ~/<store>/<alias>/hook file fires for the post-use event.
+//
+// Scripts receive the alias as argv[1] (legacy contract) and a set of SKM_*
+// environment variables. Additional event-specific context can be supplied as
+// key,value pairs in extraEnv.
+//
+// For pre-* events, the first non-zero exit returns an error so the caller can
+// abort. For post-* events, hook failures are logged but never propagate.
+func RunHook(event, alias string, env *models.Environment, extraEnv ...string) error {
+	paths := HookPaths(event, alias, env)
+	if len(paths) == 0 {
+		return nil
+	}
+
+	envVars := buildHookEnv(event, alias, env, extraEnv)
+	abortable := strings.HasPrefix(event, "pre-")
+
+	for _, p := range paths {
+		if err := runHookScript(p, alias, envVars); err != nil {
+			if abortable {
+				return fmt.Errorf("%s hook %s: %w", event, p, err)
+			}
+			color.Yellow("⚠ %s hook %s failed: %s", event, p, err)
 		}
 	}
+	return nil
+}
+
+// HookPaths returns the ordered list of executable hook scripts for the given
+// event and alias (global first, then per-key, then legacy fallback).
+func HookPaths(event, alias string, env *models.Environment) []string {
+	var paths []string
+	if p := filepath.Join(env.StorePath, HooksDir, event); isExecutableFile(p) {
+		paths = append(paths, p)
+	}
+	if alias != "" {
+		if p := filepath.Join(env.StorePath, alias, HooksDir, event); isExecutableFile(p) {
+			paths = append(paths, p)
+		}
+		if event == EventPostUse {
+			if p := filepath.Join(env.StorePath, alias, HookName); isExecutableFile(p) {
+				paths = append(paths, p)
+			}
+		}
+	}
+	return paths
+}
+
+func isExecutableFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	return info.Mode()&0111 != 0
+}
+
+func buildHookEnv(event, alias string, env *models.Environment, extraEnv []string) []string {
+	out := append(os.Environ(),
+		"SKM_EVENT="+event,
+		"SKM_ALIAS="+alias,
+		"SKM_STORE_PATH="+env.StorePath,
+		"SKM_SSH_PATH="+env.SSHPath,
+	)
+	if alias != "" {
+		if keys := LoadSSHKeys(env); keys != nil {
+			if k, ok := keys[alias]; ok {
+				if k.Type != nil {
+					out = append(out, "SKM_KEY_TYPE="+k.Type.Name)
+				}
+				out = append(out,
+					"SKM_PRIVATE_KEY="+k.PrivateKey,
+					"SKM_PUBLIC_KEY="+k.PublicKey,
+				)
+			}
+		}
+	}
+	for i := 0; i+1 < len(extraEnv); i += 2 {
+		out = append(out, extraEnv[i]+"="+extraEnv[i+1])
+	}
+	return out
+}
+
+func runHookScript(path, alias string, envVars []string) error {
+	cmd := exec.Command(path, alias)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = envVars
+	return cmd.Run()
 }
 
 // AddCache adds SSH to ssh agent cache via key alias

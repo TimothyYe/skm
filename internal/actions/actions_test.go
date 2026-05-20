@@ -589,7 +589,7 @@ func TestCopy_UnknownKeyAliasReturnsEarly(t *testing.T) {
 	}
 	c := cli.NewContext(nil, flags, nil)
 
-	// Unknown alias → resolveKeyPath errors → ssh-copy-id is not invoked.
+	// Unknown alias → resolveKey errors → ssh-copy-id is not invoked.
 	if err := Copy(c); err != nil {
 		t.Fatalf("Copy: %v", err)
 	}

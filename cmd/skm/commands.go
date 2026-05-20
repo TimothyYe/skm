@@ -150,6 +150,22 @@ func initCommands() []cli.Command {
 			},
 		},
 		{
+			Name:  "hook",
+			Usage: "Inspect hooks wired to SKM events",
+			Subcommands: []cli.Command{
+				{
+					Name:      "ls",
+					Aliases:   []string{"list"},
+					Usage:     "List hook scripts registered for SKM events",
+					ArgsUsage: "[alias]",
+					Action:    actions.HookList,
+					Flags: []cli.Flag{
+						cli.BoolFlag{Name: "all, a", Usage: "List hooks for every alias in the store"},
+					},
+				},
+			},
+		},
+		{
 			Name:   "cache",
 			Usage:  "Add your SSH to SSH agent cache via alias name",
 			Action: actions.Cache,

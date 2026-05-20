@@ -34,7 +34,7 @@ func Copy(c *cli.Context) error {
 		port = extractedPort
 	}
 
-	keyPath, err := resolveKeyPath(c, env)
+	alias, keyPath, err := resolveKey(c, env)
 	if err != nil {
 		color.Red("%s%s", utils.CrossSymbol, err.Error())
 		return nil
@@ -53,38 +53,42 @@ func Copy(c *cli.Context) error {
 
 	if utils.Execute("", "ssh-copy-id", args...) {
 		color.Green("%s SSH key copied to remote host", utils.CheckSymbol)
+		_ = utils.RunHook(utils.EventPostCopy, alias, env,
+			"SKM_REMOTE_HOST", host,
+			"SKM_REMOTE_PORT", port,
+		)
 	}
 	return nil
 }
 
-func resolveKeyPath(c *cli.Context, env *models.Environment) (string, error) {
+func resolveKey(c *cli.Context, env *models.Environment) (string, string, error) {
 	keys := utils.LoadSSHKeys(env)
 
 	if alias := c.String("key"); alias != "" {
 		key, ok := keys[alias]
 		if !ok {
-			return "", fmt.Errorf("SSH key [%s] not found", alias)
+			return "", "", fmt.Errorf("SSH key [%s] not found", alias)
 		}
-		return key.PrivateKey, nil
+		return alias, key.PrivateKey, nil
 	}
 
 	if c.Bool("pick") {
 		alias, err := pickKey("Select an SSH key to copy", keys)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
-		return keys[alias].PrivateKey, nil
+		return alias, keys[alias].PrivateKey, nil
 	}
 
 	// Find the active default by looking for the SSHKey that LoadSSHKeys
 	// marked as IsDefault. This correctly handles any supported key type,
 	// unlike a hard-coded id_rsa lookup.
-	for _, key := range keys {
+	for alias, key := range keys {
 		if key.IsDefault {
-			return key.PrivateKey, nil
+			return alias, key.PrivateKey, nil
 		}
 	}
-	return "", errors.New("No active SSH key found. Run `skm use <alias>` first or pass --key <alias>.")
+	return "", "", errors.New("No active SSH key found. Run `skm use <alias>` first or pass --key <alias>.")
 }
 
 // splitHostPort handles bracketed IPv6 forms like [::1]:2222 and user@[::1]:2222,
