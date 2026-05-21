@@ -142,12 +142,20 @@ Your public key has been saved in /Users/timothy/.skm/prod/id_rsa.pub.
 
 ### List SSH keys
 
-The default output is a column-aligned table that includes the key type, bit
-size, fingerprint, whether the key is currently loaded in `ssh-agent`, the
-modification date, and the comment. The active default key is highlighted.
+By default `ls` shows alias, key type, and comment in three columns; the
+active default key is marked with `->`. Use `-l` / `--long` for the full table
+with bits, fingerprint, agent status, and the modification date.
 
 ```bash
 % skm ls
+
+✔ Found 3 SSH key(s)!
+
+->  default  [ssh-ed25519]  [work@laptop]
+    dev      [ssh-ed25519]  [dev]
+    prod     [ssh-rsa]      [prod]
+
+% skm ls -l
 
 ✔ Found 3 SSH key(s)!
 

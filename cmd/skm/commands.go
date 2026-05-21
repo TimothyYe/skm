@@ -27,9 +27,10 @@ func initCommands() []cli.Command {
 		{
 			Name:    "ls",
 			Aliases: []string{"l"},
-			Usage:   "List all the available SSH keys",
+			Usage:   "List all the available SSH keys (alias + comment by default; use -l for full details)",
 			Action:  actions.List,
 			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "long, l", Usage: "Show full details (type, bits, fingerprint, agent, created, comment)"},
 				cli.BoolFlag{Name: "quiet, q", Usage: "Only print key alias names"},
 				cli.BoolFlag{Name: "json", Usage: "Output as JSON for scripting"},
 				cli.StringFlag{Name: "type, t", Usage: "Filter by key type (e.g. rsa, ed25519)"},

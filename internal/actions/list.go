@@ -45,28 +45,44 @@ func List(c *cli.Context) error {
 	sort.Strings(aliases)
 
 	filterType := strings.ToLower(strings.TrimSpace(c.String("type")))
-	agentFps := loadAgentFingerprints()
+	long := c.Bool("long")
+	jsonOut := c.Bool("json")
+	quiet := c.Bool("quiet")
+
+	// The fingerprint/agent lookups shell out per key, so only do them when
+	// the output format needs them (long table or JSON, or when filtering by
+	// type since that requires reading the key type).
+	wantDetails := long || jsonOut || filterType != ""
+	var agentFps map[string]bool
+	if wantDetails {
+		agentFps = loadAgentFingerprints()
+	}
 
 	rows := make([]keyRow, 0, len(aliases))
 	for _, alias := range aliases {
 		key := keyMap[alias]
-		row := buildRow(alias, key, agentFps)
+		var row keyRow
+		if wantDetails {
+			row = buildRow(alias, key, agentFps)
+		} else {
+			row = buildRowLite(alias, key)
+		}
 		if filterType != "" && row.Type != filterType {
 			continue
 		}
 		rows = append(rows, row)
 	}
 
-	if c.Bool("json") {
+	switch {
+	case jsonOut:
 		return printJSON(rows)
-	}
-
-	if c.Bool("quiet") {
+	case quiet:
 		printQuiet(rows)
-		return nil
+	case long:
+		printTable(rows)
+	default:
+		printShort(rows)
 	}
-
-	printTable(rows)
 	return nil
 }
 
@@ -93,6 +109,23 @@ func buildRow(alias string, key *models.SSHKey, agentFps map[string]bool) keyRow
 	if info, err := os.Stat(key.PrivateKey); err == nil {
 		row.Created = info.ModTime().Format("2006-01-02")
 	}
+	return row
+}
+
+// buildRowLite populates only what the short default output needs (alias,
+// default marker, comment). The comment is parsed directly from the .pub
+// file to avoid spawning ssh-keygen per key.
+func buildRowLite(alias string, key *models.SSHKey) keyRow {
+	row := keyRow{
+		Alias:      alias,
+		Default:    key.IsDefault,
+		PrivateKey: key.PrivateKey,
+		PublicKey:  key.PublicKey,
+	}
+	if key.Type != nil {
+		row.Type = key.Type.Name
+	}
+	row.Comment = readPubComment(key.PublicKey)
 	return row
 }
 
@@ -129,6 +162,42 @@ func printTable(rows []keyRow) {
 	}
 }
 
+func printShort(rows []keyRow) {
+	color.Green("\r\n%sFound %d SSH key(s)!", utils.CheckSymbol, len(rows))
+	fmt.Println()
+
+	// Render uncolored through tabwriter so ANSI escapes don't skew alignment,
+	// then recolor line-by-line on the way to stdout.
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
+	for _, r := range rows {
+		marker := "  "
+		if r.Default {
+			marker = "->"
+		}
+		typeCol := ""
+		if r.Type != "" {
+			typeCol = "[ssh-" + r.Type + "]"
+		}
+		commentCol := ""
+		if r.Comment != "" {
+			commentCol = "[" + r.Comment + "]"
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", marker, r.Alias, typeCol, commentCol)
+	}
+	w.Flush()
+
+	green := color.New(color.FgGreen)
+	blue := color.New(color.FgBlue)
+	for line := range strings.SplitSeq(strings.TrimRight(buf.String(), "\n"), "\n") {
+		if strings.HasPrefix(line, "->") {
+			green.Println(line)
+		} else {
+			blue.Println(line)
+		}
+	}
+}
+
 func printQuiet(rows []keyRow) {
 	for _, r := range rows {
 		if r.Default {
@@ -159,6 +228,27 @@ type keyDetails struct {
 	Bits        string
 	Fingerprint string
 	Comment     string
+}
+
+// readPubComment parses just the comment field from a public key file. The
+// .pub format is "<type> <base64> <comment>" — anything past the second
+// whitespace-separated field is the comment. Returns "" when the file is
+// missing or malformed.
+func readPubComment(pubKeyPath string) string {
+	if pubKeyPath == "" {
+		return ""
+	}
+	data, err := os.ReadFile(pubKeyPath)
+	if err != nil {
+		return ""
+	}
+	// Use only the first line; some .pub files have trailing newlines.
+	line, _, _ := strings.Cut(string(data), "\n")
+	parts := strings.Fields(strings.TrimSpace(line))
+	if len(parts) < 3 {
+		return ""
+	}
+	return strings.Join(parts[2:], " ")
 }
 
 // inspectKey shells out to ssh-keygen -lf to extract bits, fingerprint, and
