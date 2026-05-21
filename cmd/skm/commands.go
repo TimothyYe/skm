@@ -44,10 +44,11 @@ func initCommands() []cli.Command {
 		{
 			Name:    "delete",
 			Aliases: []string{"d"},
-			Usage:   "Delete specific SSH key by alias name",
+			Usage:   "Delete specific SSH key by alias name (moves to trash; restore with `skm trash restore`)",
 			Action:  actions.Delete,
 			Flags: []cli.Flag{
 				cli.BoolFlag{Name: "yes, y", Usage: "Skip confirmation prompt"},
+				cli.BoolFlag{Name: "purge", Usage: "Delete outright instead of moving to trash"},
 			},
 		},
 		{
@@ -150,6 +151,35 @@ func initCommands() []cli.Command {
 				cli.BoolFlag{Name: "strict", Usage: "Treat warnings as failures (exit non-zero)"},
 				cli.StringFlag{Name: "max-age", Value: "1y", Usage: "Flag keys older than this (e.g. 30d, 6m, 1y)"},
 				cli.IntFlag{Name: "rsa-min", Value: 3072, Usage: "Minimum acceptable RSA key size in bits"},
+			},
+		},
+		{
+			Name:  "trash",
+			Usage: "Manage soft-deleted SSH keys",
+			Subcommands: []cli.Command{
+				{
+					Name:    "ls",
+					Aliases: []string{"list"},
+					Usage:   "List keys currently in the trash",
+					Action:  actions.TrashList,
+				},
+				{
+					Name:      "restore",
+					Usage:     "Restore a trashed key back into the store",
+					ArgsUsage: "<name>",
+					Action:    actions.TrashRestore,
+					Flags: []cli.Flag{
+						cli.StringFlag{Name: "as", Usage: "Restore under a different alias than the original"},
+					},
+				},
+				{
+					Name:   "empty",
+					Usage:  "Permanently delete every key in the trash",
+					Action: actions.TrashEmpty,
+					Flags: []cli.Flag{
+						cli.BoolFlag{Name: "yes, y", Usage: "Skip confirmation prompt"},
+					},
+				},
 			},
 		},
 		{

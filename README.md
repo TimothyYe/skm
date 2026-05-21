@@ -32,6 +32,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Add / rotate / remove a key's passphrase
 * Diagnose your environment with `skm doctor`
 * Audit stored keys for weak strength, missing passphrases, and age with `skm audit`
+* Soft-delete to a recoverable trash, with `skm trash list|restore|empty`
 * Prompt UI (with fuzzy search) for SSH key selection across multiple commands
 * Customized SSH key store path
 * Pluggable hooks on `post-use`, `post-create`, `pre-delete`, `post-copy` events (per-key and global)
@@ -193,14 +194,28 @@ Or display specific SSH public key by alias name:
 % skm delete prod
 
 Please confirm to delete SSH key [prod] [y/n]: y
-✔ SSH key [prod] deleted!
+✔ SSH key [prod] moved to trash (restore with: skm trash restore prod-20260521150412)
 ```
 
-Pass multiple aliases to batch-delete; missing aliases are reported and skipped. Use `-y` / `--yes` to skip the confirmation (handy for scripts):
+By default a delete moves the alias into the store's trash so it can be recovered. Pass multiple aliases to batch-delete; missing aliases are reported and skipped. `-y` / `--yes` skips the confirmation, `--purge` hard-deletes (skipping the trash):
 
 ```bash
 % skm delete -y staging legacy old-laptop
+% skm delete --purge --yes ancient
 ```
+
+### Recover a deleted SSH key
+
+```bash
+% skm trash list
+NAME                       ALIAS    DELETED
+prod-20260521150412        prod     2026-05-21 15:04:12
+
+% skm trash restore prod-20260521150412
+✔ Restored [prod-20260521150412] as alias [prod]
+```
+
+You can pass either the trash entry name (`prod-20260521150412`) or just the alias (`prod`); the latter works when only one trashed entry matches. If the original alias is already taken, pass `--as <new-alias>`. Empty the trash with `skm trash empty` (prompts for confirmation; `-y` to skip).
 ### Copy SSH public key to a remote host
 
 By default the currently active key is pushed:

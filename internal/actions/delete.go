@@ -14,6 +14,7 @@ func Delete(c *cli.Context) error {
 	env := utils.MustGetEnvironment(c)
 	keyMap := utils.LoadSSHKeys(env)
 	assumeYes := c.Bool("yes")
+	purge := c.Bool("purge")
 
 	aliases := c.Args()
 	if len(aliases) == 0 {
@@ -45,7 +46,13 @@ func Delete(c *cli.Context) error {
 
 	perKeyAssumeYes := assumeYes
 	if !assumeYes && len(resolved) > 1 {
-		fmt.Print(color.BlueString("Delete %d SSH keys [%s]? [y/n]: ", len(resolved), strings.Join(resolved, ", ")))
+		verb := "Delete"
+		hint := " (moved to trash)"
+		if purge {
+			verb = "PURGE"
+			hint = " (cannot be undone)"
+		}
+		fmt.Print(color.BlueString("%s %d SSH keys [%s]%s? [y/n]: ", verb, len(resolved), strings.Join(resolved, ", "), hint))
 		var input string
 		fmt.Scan(&input)
 		if input != "y" {
@@ -55,7 +62,7 @@ func Delete(c *cli.Context) error {
 	}
 
 	for i, alias := range resolved {
-		utils.DeleteKey(alias, keys[i], env, utils.DeleteOptions{AssumeYes: perKeyAssumeYes})
+		utils.DeleteKey(alias, keys[i], env, utils.DeleteOptions{AssumeYes: perKeyAssumeYes, Purge: purge})
 	}
 	return nil
 }

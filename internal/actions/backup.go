@@ -15,7 +15,7 @@ func Backup(c *cli.Context) error {
 		lib.MustHaveRestic(env)
 		resticCfg := lib.MustLoadOrCreateResticSettings(env, c)
 		lib.EnsureInitializedResticRepo(resticCfg, env)
-		result := utils.Execute(env.StorePath, env.ResticPath, "backup", ".", "--password-file", resticCfg.PasswordFile, "--repo", resticCfg.Repository)
+		result := utils.Execute(env.StorePath, env.ResticPath, "backup", ".", "--exclude", utils.TrashDir, "--password-file", resticCfg.PasswordFile, "--repo", resticCfg.Repository)
 		if result {
 			color.Green("%s Backup to %s complete", utils.CheckSymbol, resticCfg.Repository)
 		}
@@ -24,7 +24,7 @@ func Backup(c *cli.Context) error {
 	fileName := utils.GetBakFileName()
 	dstFile := filepath.Join(os.Getenv("HOME"), fileName)
 
-	result := utils.Execute(env.StorePath, "tar", "-czvf", dstFile, ".")
+	result := utils.Execute(env.StorePath, "tar", "--exclude=./"+utils.TrashDir, "-czvf", dstFile, ".")
 	if result {
 		color.Green("%s All SSH keys backup to: %s", utils.CheckSymbol, dstFile)
 	}

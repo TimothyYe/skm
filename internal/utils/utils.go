@@ -38,6 +38,13 @@ const (
 	HookName = "hook"
 	// HooksDir is the directory holding event-named hook scripts.
 	HooksDir = "hooks"
+
+	// TrashDir is the hidden directory under the store where deleted keys
+	// are moved instead of being unlinked outright. Restorable via `skm trash restore`.
+	TrashDir = ".trash"
+	// trashTimestampLayout is the suffix appended to trashed alias dirs to
+	// disambiguate multiple deletions of the same alias.
+	trashTimestampLayout = "20060102150405"
 )
 
 // Hook event names.
@@ -99,6 +106,11 @@ type DeleteOptions struct {
 	// AssumeYes skips the interactive confirmation prompt.
 	AssumeYes bool
 
+	// Purge removes the alias directory outright instead of moving it to the
+	// store's trash. Use when the caller explicitly wants the old hard-delete
+	// behavior (e.g. `skm delete --purge`).
+	Purge bool
+
 	// testMode skips the prompt and forces the in-use cleanup path regardless
 	// of symlink state. For unit tests only.
 	testMode bool
@@ -115,11 +127,17 @@ func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, opts .
 
 	if !opt.testMode && !opt.AssumeYes {
 		var input string
-		if inUse {
-			fmt.Print(color.BlueString("SSH key [%s] is currently in use, please confirm to delete it [y/n]: ", alias))
-		} else {
-			fmt.Print(color.BlueString("Please confirm to delete SSH key [%s] [y/n]: ", alias))
+		prompt := "Please confirm to delete SSH key [%s] [y/n]: "
+		if opt.Purge {
+			prompt = "Please confirm to PURGE SSH key [%s] (cannot be undone) [y/n]: "
 		}
+		if inUse {
+			prompt = "SSH key [%s] is currently in use, please confirm to delete it [y/n]: "
+			if opt.Purge {
+				prompt = "SSH key [%s] is currently in use, please confirm to PURGE it (cannot be undone) [y/n]: "
+			}
+		}
+		fmt.Print(color.BlueString(prompt, alias))
 		fmt.Scan(&input)
 		if input != "y" {
 			return
@@ -142,11 +160,21 @@ func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, opts .
 		}
 	}
 
-	if err := os.RemoveAll(filepath.Join(env.StorePath, alias)); err == nil {
-		color.Green("%sSSH key [%s] deleted!", CheckSymbol, alias)
-	} else {
-		color.Red("%sFailed to delete SSH key [%s]!", CrossSymbol, alias)
+	if opt.Purge {
+		if err := os.RemoveAll(filepath.Join(env.StorePath, alias)); err == nil {
+			color.Green("%sSSH key [%s] purged!", CheckSymbol, alias)
+		} else {
+			color.Red("%sFailed to purge SSH key [%s]!", CrossSymbol, alias)
+		}
+		return
 	}
+
+	name, err := MoveToTrash(alias, env)
+	if err != nil {
+		color.Red("%sFailed to delete SSH key [%s]: %s", CrossSymbol, alias, err.Error())
+		return
+	}
+	color.Green("%sSSH key [%s] moved to trash (restore with: skm trash restore %s)", CheckSymbol, alias, name)
 }
 
 // RunHook executes any hook scripts registered for the given event.
@@ -415,6 +443,11 @@ func LoadSSHKeys(env *models.Environment) map[string]*models.SSHKey {
 
 		if path == env.StorePath {
 			return nil
+		}
+
+		// Don't surface trashed keys as live aliases.
+		if f.IsDir() && f.Name() == TrashDir {
+			return filepath.SkipDir
 		}
 
 		if f.IsDir() {

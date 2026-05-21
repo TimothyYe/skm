@@ -690,6 +690,61 @@ func TestDelete_BatchSkipsMissingAliases(t *testing.T) {
 	}
 }
 
+func TestDelete_MovesToTrashAndRestores(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "scratch")
+
+	// Default delete soft-deletes into the trash.
+	c := newContextWithBoolFlags(t, env, []string{"scratch"}, "yes")
+	if err := Delete(c); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(env.StorePath, "scratch")); !os.IsNotExist(err) {
+		t.Error("live alias should be gone after soft delete")
+	}
+
+	entries, err := utils.ListTrash(env)
+	if err != nil {
+		t.Fatalf("ListTrash: %v", err)
+	}
+	if len(entries) != 1 || entries[0].Alias != "scratch" {
+		t.Fatalf("trash contents = %+v, want one entry aliased 'scratch'", entries)
+	}
+
+	// Restore via the action, then verify the live alias is back.
+	rc := newContextForArgs(t, env, []string{entries[0].Name})
+	if err := TrashRestore(rc); err != nil {
+		t.Fatalf("TrashRestore: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(env.StorePath, "scratch", "id_rsa")); err != nil {
+		t.Errorf("restored alias should exist on disk: %v", err)
+	}
+}
+
+func TestDelete_PurgeBypassesTrash(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "gone")
+
+	c := newContextWithBoolFlags(t, env, []string{"gone"}, "yes", "purge")
+	if err := Delete(c); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(env.StorePath, "gone")); !os.IsNotExist(err) {
+		t.Error("live alias should be gone after purge")
+	}
+	entries, err := utils.ListTrash(env)
+	if err != nil {
+		t.Fatalf("ListTrash: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("--purge should not populate trash; got %+v", entries)
+	}
+}
+
 func TestDelete_AllMissingNoop(t *testing.T) {
 	env := setupEnvironment(t)
 	defer tearDownEnvironment(t, env)
