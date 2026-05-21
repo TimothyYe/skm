@@ -255,75 +255,97 @@ skm cp --dry-run timothy@example.com          # preview the ssh-copy-id command
 
 ### Backup SSH keys
 
-Backup all your SSH keys to $HOME directory by default.
+Backup all your SSH keys to a tarball in `$HOME`.
 
 ```bash
 % skm backup
 
 a .
-a ./test
-a ./default
-a ./dev
-a ./dev/id_rsa
-a ./dev/id_rsa.pub
 a ./default/id_rsa
 a ./default/id_rsa.pub
-a ./test/id_rsa
-a ./test/id_rsa.pub
-
-✔  All SSH keys backup to: /Users/timothy/skm-20171016170707.tar
+…
+✔  All SSH keys backup to: /Users/timothy/skm-20260521221544.tar.gz
+⚠ This bundle contains UNENCRYPTED private keys. If it leaves this
+  machine, anyone with the file can use your keys. Re-run with
+  --encrypt to produce an encrypted archive.
 ```
 
-If you have [restic](https://restic.net/) installed then you can also use that
-to create backups of your SKM store:
+The default tar contains your private keys in the clear. To produce an
+encrypted bundle (AES-256-CBC via openssl, same envelope as `skm export
+--encrypt`), pass `--encrypt`:
 
 ```bash
-# First, you need a password for your repository
-% if [[ ! -f ~/.skm-backups.passwd ]]; then
-%     openssl rand -hex 64 > ~/.skm-backups.passwd
-% fi
-
-% skm backup --restic
-repository ... opened successfully, password is correct
-
-Files:           0 new,     1 changed,     4 unmodified
-Dirs:            0 new,     0 changed,     0 unmodified
-Added to the repo: 1.179 KiB
-
-processed 5 files, 2.593 KiB in 0:00
-snapshot $SNAPSHOT saved
-✔  Backup to /Users/$USER/.skm-backups complete
+% skm backup --encrypt
+enter AES-256-CBC encryption password:
+Verifying - enter AES-256-CBC encryption password:
+✔  All SSH keys backup to: /Users/timothy/skm-20260521221544.tar.gz.enc
+  Decrypt with: openssl enc -d -aes-256-cbc -pbkdf2 -in /Users/timothy/skm-20260521221544.tar.gz.enc -out skm-20260521221544.tar.gz
 ```
+
+For scripted use, pass `--password-file <path>` to read the passphrase from a
+file instead of prompting.
+
+#### Restic-backed backups (local or cloud)
+
+If you have [restic](https://restic.net/) installed, SKM can use it to produce
+encrypted, deduplicated, snapshot-style backups that can target local disk,
+S3, Cloudflare R2, Backblaze B2, SFTP, and any other backend restic supports.
+Run the one-time interactive setup first:
+
+```bash
+% skm backup --restic --init
+Configuring restic backup for SKM.
+Examples:
+  Local:  /Users/me/.skm-backups
+  S3:     s3:s3.amazonaws.com/my-bucket/skm
+  R2:     s3:https://<account>.r2.cloudflarestorage.com/my-bucket/skm
+  SFTP:   sftp:user@host:/data/skm
+  B2:     b2:my-bucket/skm
+
+For S3, R2, and B2, set the relevant credential env vars (e.g.
+AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) before running backup.
+
+✔ Restic repository initialized at s3:https://abc.r2.cloudflarestorage.com/skm
+⚠ IMPORTANT: store the restic password somewhere OTHER than this machine.
+  If this laptop is lost and the password only lives in ~/.skm-backups.passwd,
+  the backup will be unrecoverable.
+```
+
+Then run repeat backups:
+
+```bash
+% skm backup --restic
+✔  Backup to s3:https://abc.r2.cloudflarestorage.com/skm complete
+```
+
+Restic encrypts every chunk client-side before upload, so the remote
+destination never sees plaintext. The R2/S3 credentials and the restic
+password are independent secrets — losing the credentials means re-issuing
+them; losing the restic password means the backup is unrecoverable.
 
 ### Restore SSH keys
 
 ```bash
-% skm restore ~/skm-20171016172828.tar.gz                                                                                           
-x ./
-x ./test/
-x ./default/
-x ./dev/
-x ./dev/id_rsa
-x ./dev/id_rsa.pub
-x ./default/._id_rsa
-x ./default/id_rsa
-x ./default/._id_rsa.pub
-x ./default/id_rsa.pub
-x ./test/id_rsa
-x ./test/id_rsa.pub
-
+% skm restore ~/skm-20260521221544.tar.gz
 ✔  All SSH keys restored to /Users/timothy/.skm
 ```
 
-Again, SKM also supports [restic](https://restic.net/) to create and restore
-backups:
+`.enc` bundles are auto-detected and decrypted before extraction:
+
+```bash
+% skm restore ~/skm-20260521221544.tar.gz.enc
+enter AES-256-CBC decryption password:
+✔  All SSH keys restored to /Users/timothy/.skm
+```
+
+For restic-backed backups, pick a snapshot to restore:
 
 ```bash
 % skm restore --restic --restic-snapshot $SNAPSHOT
-repository $REPO opened successfully, password is correct
-restoring <Snapshot $SNAPSHOT of [/Users/$USER/.skm] at 2018-10-03 19:40:33.333130348 +0200 CEST by $USER@$HOST> to /Users/$USER/.skm
 ✔  Backup restored to /Users/$USER/.skm
 ```
+
+Omit `--restic-snapshot` and SKM will list the available snapshots.
 
 ### Import an existing key
 

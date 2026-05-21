@@ -79,18 +79,22 @@ func initCommands() []cli.Command {
 		{
 			Name:    "backup",
 			Aliases: []string{"b"},
-			Usage:   "Backup all SSH keys to an archive file",
+			Usage:   "Backup all SSH keys to an archive file (or a restic repository with --restic)",
 			Action:  actions.Backup,
 			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "encrypt", Usage: "Encrypt the tar bundle with openssl AES-256-CBC"},
+				cli.StringFlag{Name: "password-file", Usage: "Read the encryption passphrase from this file (skips the prompt)"},
 				cli.BoolFlag{Name: "restic", Usage: "Use restic to generate backup"},
+				cli.BoolFlag{Name: "init", Usage: "Interactively configure a restic repository (use with --restic)"},
 			},
 		},
 		{
 			Name:    "restore",
 			Aliases: []string{"r"},
-			Usage:   "Restore SSH keys from an existing archive file",
+			Usage:   "Restore SSH keys from an existing archive file (.enc bundles are auto-decrypted)",
 			Action:  actions.Restore,
 			Flags: []cli.Flag{
+				cli.StringFlag{Name: "password-file", Usage: "Read the decryption passphrase from this file"},
 				cli.BoolFlag{Name: "restic", Usage: "Use restic to generate backup"},
 				cli.StringFlag{Name: "restic-snapshot", Usage: "The snapshot to be restored"},
 			},
