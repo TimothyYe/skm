@@ -1,6 +1,10 @@
 package actions
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/TimothyYe/skm/internal/models"
 	"github.com/TimothyYe/skm/internal/utils"
 	"github.com/fatih/color"
 	"gopkg.in/urfave/cli.v1"
@@ -9,11 +13,10 @@ import (
 func Delete(c *cli.Context) error {
 	env := utils.MustGetEnvironment(c)
 	keyMap := utils.LoadSSHKeys(env)
+	assumeYes := c.Bool("yes")
 
-	var alias string
-	if c.NArg() > 0 {
-		alias = c.Args().Get(0)
-	} else {
+	aliases := c.Args()
+	if len(aliases) == 0 {
 		picked, err := pickKey("Select an SSH key to delete", keyMap)
 		if err != nil {
 			if err == ErrNoKeys {
@@ -21,15 +24,38 @@ func Delete(c *cli.Context) error {
 			}
 			return nil
 		}
-		alias = picked
+		aliases = []string{picked}
 	}
 
-	key, ok := keyMap[alias]
-	if !ok {
-		color.Red("Key alias: %s doesn't exist!", alias)
+	resolved := make([]string, 0, len(aliases))
+	keys := make([]*models.SSHKey, 0, len(aliases))
+	for _, alias := range aliases {
+		key, ok := keyMap[alias]
+		if !ok {
+			color.Red("Key alias: %s doesn't exist!", alias)
+			continue
+		}
+		resolved = append(resolved, alias)
+		keys = append(keys, key)
+	}
+
+	if len(resolved) == 0 {
 		return nil
 	}
 
-	utils.DeleteKey(alias, key, env)
+	perKeyAssumeYes := assumeYes
+	if !assumeYes && len(resolved) > 1 {
+		fmt.Print(color.BlueString("Delete %d SSH keys [%s]? [y/n]: ", len(resolved), strings.Join(resolved, ", ")))
+		var input string
+		fmt.Scan(&input)
+		if input != "y" {
+			return nil
+		}
+		perKeyAssumeYes = true
+	}
+
+	for i, alias := range resolved {
+		utils.DeleteKey(alias, keys[i], env, utils.DeleteOptions{AssumeYes: perKeyAssumeYes})
+	}
 	return nil
 }

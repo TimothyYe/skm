@@ -646,3 +646,63 @@ func TestRename_NonexistentSourceNoop(t *testing.T) {
 		t.Error("target alias should not exist when source is missing")
 	}
 }
+
+// ----- Delete -----
+
+func TestDelete_BatchWithYesFlag(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+	seedKey(t, env, "beta")
+	seedKey(t, env, "gamma")
+
+	// --yes skips both the summary prompt and per-key prompts; all three should be removed.
+	c := newContextWithBoolFlags(t, env, []string{"alpha", "beta", "gamma"}, "yes")
+	if err := Delete(c); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	for _, alias := range []string{"alpha", "beta", "gamma"} {
+		if _, err := os.Stat(filepath.Join(env.StorePath, alias)); !os.IsNotExist(err) {
+			t.Errorf("alias %q should be deleted", alias)
+		}
+	}
+}
+
+func TestDelete_BatchSkipsMissingAliases(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+	seedKey(t, env, "gamma")
+
+	// "beta" doesn't exist — it should be reported and skipped without aborting the rest.
+	c := newContextWithBoolFlags(t, env, []string{"alpha", "beta", "gamma"}, "yes")
+	if err := Delete(c); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	for _, alias := range []string{"alpha", "gamma"} {
+		if _, err := os.Stat(filepath.Join(env.StorePath, alias)); !os.IsNotExist(err) {
+			t.Errorf("alias %q should be deleted", alias)
+		}
+	}
+}
+
+func TestDelete_AllMissingNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	seedKey(t, env, "alpha")
+
+	// Every supplied alias is unknown — Delete should return without prompting or touching anything.
+	c := newContextWithBoolFlags(t, env, []string{"nope", "still-nope"}, "yes")
+	if err := Delete(c); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(env.StorePath, "alpha")); err != nil {
+		t.Errorf("untouched alias should survive: %v", err)
+	}
+}

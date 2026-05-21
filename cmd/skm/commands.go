@@ -46,6 +46,9 @@ func initCommands() []cli.Command {
 			Aliases: []string{"d"},
 			Usage:   "Delete specific SSH key by alias name",
 			Action:  actions.Delete,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "yes, y", Usage: "Skip confirmation prompt"},
+			},
 		},
 		{
 			Name:    "rename",

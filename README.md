@@ -195,6 +195,12 @@ Or display specific SSH public key by alias name:
 Please confirm to delete SSH key [prod] [y/n]: y
 ✔ SSH key [prod] deleted!
 ```
+
+Pass multiple aliases to batch-delete; missing aliases are reported and skipped. Use `-y` / `--yes` to skip the confirmation (handy for scripts):
+
+```bash
+% skm delete -y staging legacy old-laptop
+```
 ### Copy SSH public key to a remote host
 
 By default the currently active key is pushed:

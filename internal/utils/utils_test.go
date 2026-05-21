@@ -139,7 +139,7 @@ func TestDeleteKey(t *testing.T) {
 	//Construct a key
 	key := models.SSHKey{PrivateKey: filepath.Join(env.StorePath, "testkey123", "id_rsa"), PublicKey: filepath.Join(env.StorePath, "testkey123", "id_rsa.pub")}
 	//Delete key
-	DeleteKey("testkey123", &key, env, true)
+	DeleteKey("testkey123", &key, env, DeleteOptions{testMode: true})
 
 	if _, err := os.Stat(filepath.Join(env.StorePath, "testkey123")); !os.IsNotExist(err) {
 		t.Error("key should be deleted")
@@ -357,7 +357,7 @@ func TestDeleteKey_InUseClearsSshSymlinks(t *testing.T) {
 	if !ok {
 		t.Fatal("setup: alias not loaded")
 	}
-	DeleteKey(alias, key, env, true)
+	DeleteKey(alias, key, env, DeleteOptions{testMode: true})
 
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
 		t.Error("alias directory should be removed")
@@ -584,7 +584,7 @@ func TestDeleteKey_PreDeleteHookCanAbort(t *testing.T) {
 		PrivateKey: filepath.Join(dir, "id_rsa"),
 		PublicKey:  filepath.Join(dir, "id_rsa.pub"),
 	}
-	DeleteKey(alias, key, env, true)
+	DeleteKey(alias, key, env, DeleteOptions{testMode: true})
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		t.Error("pre-delete hook returned non-zero; alias directory must survive")

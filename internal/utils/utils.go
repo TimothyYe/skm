@@ -94,49 +94,58 @@ func ClearKey(env *models.Environment) error {
 	return nil
 }
 
-// DeleteKey delete key by its alias name
-func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, forTest ...bool) {
-	inUse := key.PrivateKey == ParsePath(filepath.Join(env.SSHPath, key.PrivateKey))
-	var testMode bool
-	var input string
+// DeleteOptions controls DeleteKey behavior.
+type DeleteOptions struct {
+	// AssumeYes skips the interactive confirmation prompt.
+	AssumeYes bool
 
-	if len(forTest) > 0 {
-		testMode = true
-	} else {
-		testMode = false
+	// testMode skips the prompt and forces the in-use cleanup path regardless
+	// of symlink state. For unit tests only.
+	testMode bool
+}
+
+// DeleteKey delete key by its alias name
+func DeleteKey(alias string, key *models.SSHKey, env *models.Environment, opts ...DeleteOptions) {
+	var opt DeleteOptions
+	if len(opts) > 0 {
+		opt = opts[0]
 	}
 
-	if !testMode {
+	inUse := key.PrivateKey == ParsePath(filepath.Join(env.SSHPath, key.PrivateKey))
+
+	if !opt.testMode && !opt.AssumeYes {
+		var input string
 		if inUse {
 			fmt.Print(color.BlueString("SSH key [%s] is currently in use, please confirm to delete it [y/n]: ", alias))
 		} else {
 			fmt.Print(color.BlueString("Please confirm to delete SSH key [%s] [y/n]: ", alias))
 		}
 		fmt.Scan(&input)
-	} else {
-		input = "y"
+		if input != "y" {
+			return
+		}
+	}
+
+	if opt.testMode {
 		inUse = true
 	}
 
-	if input == "y" {
-		if err := RunHook(EventPreDelete, alias, env); err != nil {
-			color.Red("%spre-delete hook aborted deletion of [%s]: %s", CrossSymbol, alias, err.Error())
+	if err := RunHook(EventPreDelete, alias, env); err != nil {
+		color.Red("%spre-delete hook aborted deletion of [%s]: %s", CrossSymbol, alias, err.Error())
+		return
+	}
+
+	if inUse {
+		if err := ClearKey(env); err != nil {
+			color.Red("%s%s", CrossSymbol, err.Error())
 			return
 		}
+	}
 
-		if inUse {
-			if err := ClearKey(env); err != nil {
-				color.Red("%s%s", CrossSymbol, err.Error())
-				return
-			}
-		}
-
-		//Remove specified key by alias name
-		if err := os.RemoveAll(filepath.Join(env.StorePath, alias)); err == nil {
-			color.Green("%sSSH key [%s] deleted!", CheckSymbol, alias)
-		} else {
-			color.Red("%sFailed to delete SSH key [%s]!", CrossSymbol, alias)
-		}
+	if err := os.RemoveAll(filepath.Join(env.StorePath, alias)); err == nil {
+		color.Green("%sSSH key [%s] deleted!", CheckSymbol, alias)
+	} else {
+		color.Red("%sFailed to delete SSH key [%s]!", CrossSymbol, alias)
 	}
 }
 
