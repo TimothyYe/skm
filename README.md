@@ -126,19 +126,32 @@ SKM will create SSH key store at ```$HOME/.skm``` and put all the SSH keys in it
 __NOTE:__ If you already have id_rsa & id_rsa.pub key pairs in ```$HOME/.ssh```, SKM will move them to ```$HOME/.skm/default```
 
 ### Create a new SSH key
-__NOTE:__ Currently __ONLY__ RSA and ED25519 keys are supported!
+
+Supported key types: `ed25519` (default), `rsa`, `ed25519-sk`, `ecdsa-sk`. The
+`-sk` variants are FIDO2 hardware-backed keys and require `ssh-keygen` 8.2+
+plus a security key (YubiKey, Solo, etc.) plugged in at creation time.
 
 ```bash
-skm create prod -C "abc@abc.com" -t ed25519
-
-Generating public/private rsa key pair.
+% skm create prod -C "abc@abc.com"
+Generating public/private ed25519 key pair.
 Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
-Your identification has been saved in /Users/timothy/.skm/prod/id_rsa.
-Your public key has been saved in /Users/timothy/.skm/prod/id_rsa.pub.
+Your identification has been saved in /Users/timothy/.skm/prod/id_ed25519.
+Your public key has been saved in /Users/timothy/.skm/prod/id_ed25519.pub.
 ...
 ✔ SSH key [prod] created!
 ```
+
+Other examples:
+
+```bash
+skm create old -t rsa -b 4096           # RSA (minimum 3072 bits enforced)
+skm create yubi -t ed25519-sk           # hardware-backed; prompts for PIN + touch
+```
+
+RSA keys below 3072 bits are rejected — `skm audit` flags those as weak, so
+`create` and `audit` agree on what's safe. Use `ssh-keygen` directly if you
+need a smaller key for testing.
 
 ### List SSH keys
 

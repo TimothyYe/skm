@@ -21,6 +21,16 @@ func TestKeyTypeRegistry(t *testing.T) {
 			found: true,
 		},
 		{
+			name:  "ed25519-sk",
+			input: "id_ed25519_sk",
+			found: true,
+		},
+		{
+			name:  "ecdsa-sk",
+			input: "id_ecdsa_sk",
+			found: true,
+		},
+		{
 			name:  "",
 			input: "unsupported",
 			found: false,
@@ -48,6 +58,8 @@ func TestKeyTypeFilenames(t *testing.T) {
 	}{
 		{registryKey: "rsa", priv: "id_rsa", pub: "id_rsa.pub"},
 		{registryKey: "ed25519", priv: "id_ed25519", pub: "id_ed25519.pub"},
+		{registryKey: "ed25519-sk", priv: "id_ed25519_sk", pub: "id_ed25519_sk.pub"},
+		{registryKey: "ecdsa-sk", priv: "id_ecdsa_sk", pub: "id_ecdsa_sk.pub"},
 	}
 	for _, tc := range testcases {
 		kt, ok := SupportedKeyTypes[tc.registryKey]

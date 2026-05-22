@@ -473,6 +473,13 @@ func validateAlias(alias string) error {
 	if strings.ContainsAny(alias, "/\\ \t") {
 		return fmt.Errorf("alias cannot contain spaces or path separators")
 	}
+	if alias == "." || alias == ".." {
+		return fmt.Errorf("alias %q is reserved", alias)
+	}
+	if strings.HasPrefix(alias, ".") {
+		// Dot-prefixed names clash with .trash and similar internal dirs.
+		return fmt.Errorf("alias %q cannot start with a dot", alias)
+	}
 	return nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -225,6 +226,83 @@ func TestCreate_DuplicateAliasSkipsKeygen(t *testing.T) {
 		if string(got) != want {
 			t.Errorf("%s was overwritten: got %q, want %q", path, string(got), want)
 		}
+	}
+}
+
+func TestBuildKeygenArgs_DefaultsAndShape(t *testing.T) {
+	cases := []struct {
+		name      string
+		params    createParams
+		storePath string
+		want      []string
+	}{
+		{
+			name:      "ed25519 default — no -b",
+			params:    createParams{Alias: "tim", Type: "ed25519"},
+			storePath: "/store",
+			want:      []string{"-t", "ed25519", "-f", "/store/tim/id_ed25519"},
+		},
+		{
+			name:      "rsa with explicit bits and comment",
+			params:    createParams{Alias: "prod", Type: "rsa", Bits: 4096, Comment: "prod@laptop"},
+			storePath: "/store",
+			want:      []string{"-t", "rsa", "-f", "/store/prod/id_rsa", "-b", "4096", "-C", "prod@laptop"},
+		},
+		{
+			name:      "ed25519-sk — no bits, filename matches registry",
+			params:    createParams{Alias: "yubi", Type: "ed25519-sk"},
+			storePath: "/store",
+			want:      []string{"-t", "ed25519-sk", "-f", "/store/yubi/id_ed25519_sk"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := buildKeygenArgs(tc.params, tc.storePath)
+			if !slices.Equal(got, tc.want) {
+				t.Errorf("buildKeygenArgs() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCreate_UnknownTypeLeavesNoOrphan(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	// `-t bogus` should fail validation BEFORE any directory is created.
+	c := newContextForArgs(t, env, []string{"--t", "bogus", "foo"}, "t", "b", "C")
+	if err := Create(c); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(env.StorePath, "foo")); !os.IsNotExist(err) {
+		t.Error("invalid -t should not leave an orphan alias directory")
+	}
+}
+
+func TestCreate_SubMinRSABitsRejected(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	c := newContextForArgs(t, env, []string{"--t", "rsa", "--b", "2048", "weak"}, "t", "b", "C")
+	if err := Create(c); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(env.StorePath, "weak")); !os.IsNotExist(err) {
+		t.Error("sub-3072 RSA should be rejected without creating an alias directory")
+	}
+}
+
+func TestCreate_DotPrefixedAliasRejected(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+
+	// Reserve dot-prefixed names (clash with .trash, etc.).
+	c := newContextForArgs(t, env, []string{".hidden"}, "t", "b", "C")
+	if err := Create(c); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(env.StorePath, ".hidden")); !os.IsNotExist(err) {
+		t.Error("dot-prefixed alias should be rejected without creating a directory")
 	}
 }
 

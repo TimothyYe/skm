@@ -16,12 +16,12 @@ func initCommands() []cli.Command {
 		{
 			Name:    "create",
 			Aliases: []string{"c"},
-			Usage:   "Create a new SSH key.",
+			Usage:   "Create a new SSH key (defaults to ed25519; rsa, ed25519-sk, ecdsa-sk also supported)",
 			Action:  actions.Create,
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "b", Usage: "bits"},
-				cli.StringFlag{Name: "C", Usage: "comment"},
-				cli.StringFlag{Name: "t", Usage: "type"},
+				cli.StringFlag{Name: "b", Usage: "Key size in bits (RSA only; minimum 3072, default 3072)"},
+				cli.StringFlag{Name: "C", Usage: "Key comment passed to ssh-keygen"},
+				cli.StringFlag{Name: "t", Usage: "Key type: ed25519 (default), rsa, ed25519-sk, ecdsa-sk"},
 			},
 		},
 		{

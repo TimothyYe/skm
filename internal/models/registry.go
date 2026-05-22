@@ -31,4 +31,19 @@ func init() {
 		SupportsVariableBitsize: false,
 		KeyBaseName:             "id_ed25519",
 	}
+
+	// FIDO2 hardware-backed keys. The on-disk file is a key handle, not the
+	// actual private material — that lives on the security key itself.
+	// ssh-keygen 8.2+ and libfido2 are required at create time.
+	SupportedKeyTypes["ed25519-sk"] = KeyType{
+		Name:                    "ed25519-sk",
+		SupportsVariableBitsize: false,
+		KeyBaseName:             "id_ed25519_sk",
+	}
+
+	SupportedKeyTypes["ecdsa-sk"] = KeyType{
+		Name:                    "ecdsa-sk",
+		SupportsVariableBitsize: false,
+		KeyBaseName:             "id_ecdsa_sk",
+	}
 }
