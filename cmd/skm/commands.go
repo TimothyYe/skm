@@ -138,6 +138,22 @@ func initCommands() []cli.Command {
 			Action:  actions.Passphrase,
 		},
 		{
+			Name:    "publish",
+			Aliases: []string{"pub"},
+			Usage:   "Upload an SSH public key to GitHub, GitLab, or Bitbucket",
+			Action:  actions.Publish,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "github", Usage: "Publish to GitHub"},
+				cli.BoolFlag{Name: "gitlab", Usage: "Publish to GitLab"},
+				cli.BoolFlag{Name: "bitbucket", Usage: "Publish to Bitbucket (requires --user)"},
+				cli.StringFlag{Name: "url", Usage: "Base URL for self-hosted GitHub Enterprise or GitLab"},
+				cli.StringFlag{Name: "user, u", Usage: "Account/workspace name (Bitbucket)"},
+				cli.StringFlag{Name: "token", Usage: "API token (else read from env or gh/glab CLI)"},
+				cli.StringFlag{Name: "title", Usage: "Title for the uploaded key (default: skm-<alias>-<host>-<date>)"},
+				cli.BoolFlag{Name: "dry-run", Usage: "Print what would be sent without uploading"},
+			},
+		},
+		{
 			Name:    "doctor",
 			Aliases: []string{"dr"},
 			Usage:   "Run diagnostics against the SKM environment, agent, and stored keys",

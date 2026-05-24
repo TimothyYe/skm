@@ -32,6 +32,7 @@ SKM is a simple and powerful SSH Keys Manager. It helps you to manage your multi
 * Add / rotate / remove a key's passphrase
 * Diagnose your environment with `skm doctor`
 * Audit stored keys for weak strength, missing passphrases, and age with `skm audit`
+* Publish a public key to GitHub, GitLab, or Bitbucket with `skm publish`
 * Soft-delete to a recoverable trash, with `skm trash list|restore|empty`
 * Prompt UI (with fuzzy search) for SSH key selection across multiple commands
 * Customized SSH key store path
@@ -97,6 +98,7 @@ COMMANDS:
      fingerprint, fp  Print the SHA256 fingerprint of an SSH key.
      info, in         Show detailed information about an SSH key.
      passphrase, pp   Add, rotate, or remove the passphrase on an SSH key.
+     publish, pub     Upload an SSH public key to GitHub, GitLab, or Bitbucket.
      doctor, dr       Run diagnostics against the SKM environment, agent, and stored keys.
      audit, au        Audit stored keys for weak strength, missing passphrases, and age.
      cache            Add your SSH to SSH agent cache via alias name.
@@ -510,6 +512,72 @@ Flags:
 
 Audit exits non-zero on any failure-level finding; warnings alone return 0
 unless `--strict` is set.
+
+### Publish a public key to GitHub, GitLab, or Bitbucket
+
+`skm publish` (alias `pub`) uploads a public key to a Git hosting provider
+via its API, so you don't need to copy-paste into the web UI. The currently
+active key is used when no alias is given.
+
+```bash
+% skm publish work --github
+✔ published [work] to github as "skm-work-laptop-20260524"
+
+% skm publish work --gitlab --url https://gitlab.internal
+% skm publish work --bitbucket --user alice
+% skm publish --github --dry-run                 # preview without uploading
+```
+
+Only the public key is ever read; the private key is never touched.
+
+#### Tokens
+
+Resolution order (per provider):
+
+1. `--token <token>` flag
+2. Environment variable
+   * GitHub: `$SKM_GITHUB_TOKEN`, `$GITHUB_TOKEN`, `$GH_TOKEN`
+   * GitLab: `$SKM_GITLAB_TOKEN`, `$GITLAB_TOKEN`, `$GL_TOKEN`
+   * Bitbucket: `$SKM_BITBUCKET_TOKEN`, `$BITBUCKET_TOKEN`
+3. CLI fallback (only when no token was found above)
+   * GitHub: `gh auth token` (requires `gh auth login`; needs scope `admin:public_key`)
+   * GitLab: `glab auth token`
+   * Bitbucket: none — use a Bitbucket app password (scope: *Account: Write*)
+
+If your existing `gh` session is missing the required scope:
+
+```bash
+gh auth refresh -s admin:public_key
+```
+
+#### Self-hosted instances
+
+Pass `--url` to point at GitHub Enterprise or a self-hosted GitLab:
+
+```bash
+skm publish work --github   --url https://github.example.com/api/v3
+skm publish work --gitlab   --url https://gitlab.example.com
+```
+
+#### Idempotency
+
+`publish` lists the keys already on the provider and compares them to the
+local one by canonical form (type + base64, ignoring trailing comments). A
+duplicate prints a notice and exits 0 — re-running the command is safe:
+
+```bash
+% skm publish work --github
+✔ [work] already published on github as "skm-work-laptop-20260520"
+```
+
+#### Title
+
+Defaults to `skm-<alias>-<hostname>-<YYYYMMDD>` so the entry is identifiable
+in the provider's UI later. Override with `--title`:
+
+```bash
+skm publish work --github --title "tims-macbook"
+```
 
 ### Integrate with SSH agent
 
