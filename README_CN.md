@@ -686,7 +686,7 @@ skm hook ls --all        # 列出全局 + 所有别名的按密钥钩子
 
 ## Star 历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=timothyye/skm&type=date&legend=top-left)](https://www.star-history.com/#timothyye/skm&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/chart?repos=timothyye/skm&type=date&legend=top-left&sealed_token=vPfviY4OSSZQsQ1qTo3m2msOMxNllj6nSY2mbYJNiyra-s3YW6c3IS3YjMkezcIdkRfgzwfDtkBkdwo7Gh0epoTkTJ04DxyMOpHjnwXXO3of8aXxzWUm3w)](https://www.star-history.com/?type=date&legend=top-left&repos=timothyye%2Fskm)
 
 ## 许可证
 
