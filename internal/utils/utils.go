@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -234,6 +235,11 @@ func isExecutableFile(path string) bool {
 	if err != nil || info.IsDir() {
 		return false
 	}
+	if runtime.GOOS == "windows" {
+		// Windows has no POSIX executable permission bits; any regular file
+		// placed as a hook is considered runnable.
+		return true
+	}
 	return info.Mode()&0111 != 0
 }
 
@@ -264,7 +270,14 @@ func buildHookEnv(event, alias string, env *models.Environment, extraEnv []strin
 }
 
 func runHookScript(path, alias string, envVars []string) error {
+	// Windows cannot execute shebang scripts directly; route them through a
+	// POSIX shell when one is available.
 	cmd := exec.Command(path, alias)
+	if runtime.GOOS == "windows" {
+		if sh, err := exec.LookPath("sh"); err == nil {
+			cmd = exec.Command(sh, path, alias)
+		}
+	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -88,7 +89,12 @@ func TestResolveToken(t *testing.T) {
 	}
 
 	// stdout from a CLI fallback is used and trimmed
-	if got := ResolveToken("", nil, []string{"printf", "  cli-tok  \n"}); got != "cli-tok" {
+	cliFallback := []string{"printf", "  cli-tok  \n"}
+	if runtime.GOOS == "windows" {
+		// printf is a POSIX shell builtin; use cmd's echo on Windows.
+		cliFallback = []string{"cmd", "/c", "echo", "cli-tok"}
+	}
+	if got := ResolveToken("", nil, cliFallback); got != "cli-tok" {
 		t.Errorf("expected cli-tok, got %q", got)
 	}
 }

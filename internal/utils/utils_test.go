@@ -5,6 +5,7 @@ import (
 	"github.com/TimothyYe/skm/internal/models"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -42,33 +43,41 @@ func tearDownTestEnvironment(t *testing.T, env *models.Environment) {
 }
 
 func TestExecute(t *testing.T) {
-	result := Execute("/home", "ls")
-	if !result {
+	if runtime.GOOS == "windows" {
+		if !Execute("", "cmd", "/c", "exit", "0") {
+			t.Error("should return true")
+		}
+		if Execute("", "cmd", "/c", "exit", "1") {
+			t.Error("should return false")
+		}
+		return
+	}
+	if !Execute("", "true") {
 		t.Error("should return true")
 	}
-
-	result = Execute("/home", "aaa")
-	if result {
+	if Execute("", "false") {
 		t.Error("should return false")
 	}
 }
 
 func TestParsePath(t *testing.T) {
-	path := ParsePath("/etc/passwd")
+	// Use a real file in a temp dir so the test works on any platform.
+	target := filepath.Join(t.TempDir(), "passwd")
+	if err := os.WriteFile(target, []byte("data"), 0600); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
 
-	if path != "/etc/passwd" {
+	if path := ParsePath(target); path != target {
 		t.Error("path are not equal")
 	}
 
 	// parse symbol link via a unique tmp path so re-runs don't collide
 	linkPath := filepath.Join(t.TempDir(), "passwd-link")
-	if err := os.Symlink("/etc/passwd", linkPath); err != nil {
+	if err := os.Symlink(target, linkPath); err != nil {
 		t.Fatalf("failed to create symbol link: %v", err)
 	}
-	path = ParsePath(linkPath)
-
-	if path != "/etc/passwd" {
-		t.Errorf("expected /etc/passwd, got %q", path)
+	if path := ParsePath(linkPath); path != target {
+		t.Errorf("expected %s, got %q", target, path)
 	}
 }
 
@@ -94,9 +103,12 @@ func TestLoadSSHKeys(t *testing.T) {
 	defer tearDownTestEnvironment(t, env)
 
 	// Create a test key
-	Execute("", "mkdir", filepath.Join(env.StorePath, "testkey123"))
-	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa"))
-	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa.pub"))
+	keyDir := filepath.Join(env.StorePath, "testkey123")
+	if err := os.MkdirAll(keyDir, 0700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	mustWriteFile(t, filepath.Join(keyDir, "id_rsa"), "priv")
+	mustWriteFile(t, filepath.Join(keyDir, "id_rsa.pub"), "pub")
 
 	keyMap := LoadSSHKeys(env)
 
@@ -132,9 +144,12 @@ func TestDeleteKey(t *testing.T) {
 	defer tearDownTestEnvironment(t, env)
 
 	//Create a test key
-	Execute("", "mkdir", filepath.Join(env.StorePath, "testkey123"))
-	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa"))
-	Execute("", "touch", filepath.Join(env.StorePath, "testkey123", "id_rsa.pub"))
+	keyDir := filepath.Join(env.StorePath, "testkey123")
+	if err := os.MkdirAll(keyDir, 0700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	mustWriteFile(t, filepath.Join(keyDir, "id_rsa"), "priv")
+	mustWriteFile(t, filepath.Join(keyDir, "id_rsa.pub"), "pub")
 
 	//Construct a key
 	key := models.SSHKey{PrivateKey: filepath.Join(env.StorePath, "testkey123", "id_rsa"), PublicKey: filepath.Join(env.StorePath, "testkey123", "id_rsa.pub")}
@@ -150,8 +165,8 @@ func TestLoadSingleKey(t *testing.T) {
 	env := setupTestEnvironment(t)
 	defer tearDownTestEnvironment(t, env)
 
-	Execute("", "touch", filepath.Join(env.SSHPath, "id_rsa"))
-	Execute("", "touch", filepath.Join(env.SSHPath, "id_rsa.pub"))
+	mustWriteFile(t, filepath.Join(env.SSHPath, "id_rsa"), "priv")
+	mustWriteFile(t, filepath.Join(env.SSHPath, "id_rsa.pub"), "pub")
 
 	key := loadSingleKey(env.SSHPath, env)
 
@@ -379,7 +394,7 @@ func writeHook(t *testing.T, path, logFile, extraExit string) {
 		t.Fatalf("mkdir hook dir: %v", err)
 	}
 	body := "#!/bin/sh\n" +
-		"printf '%s %s %s\\n' \"$SKM_EVENT\" \"$SKM_ALIAS\" \"$1\" >> " + logFile + "\n" +
+		"printf '%s %s %s\\n' \"$SKM_EVENT\" \"$SKM_ALIAS\" \"$1\" >> " + filepath.ToSlash(logFile) + "\n" +
 		extraExit
 	if err := os.WriteFile(path, []byte(body), 0755); err != nil {
 		t.Fatalf("write hook: %v", err)
@@ -459,10 +474,11 @@ func TestRunHook_GlobalAndPerKeyBothFire(t *testing.T) {
 		t.Fatalf("setup: %v", err)
 	}
 	log := filepath.Join(env.StorePath, "fired.log")
+	logSlash := filepath.ToSlash(log)
 	// Global hook tags its line "G", per-key tags "K", so the ordering is
 	// observable in the log.
-	writeGlobal := "#!/bin/sh\necho G $SKM_EVENT $SKM_ALIAS >> " + log + "\n"
-	writePerKey := "#!/bin/sh\necho K $SKM_EVENT $SKM_ALIAS >> " + log + "\n"
+	writeGlobal := "#!/bin/sh\necho G $SKM_EVENT $SKM_ALIAS >> " + logSlash + "\n"
+	writePerKey := "#!/bin/sh\necho K $SKM_EVENT $SKM_ALIAS >> " + logSlash + "\n"
 	if err := os.MkdirAll(filepath.Join(env.StorePath, HooksDir), 0700); err != nil {
 		t.Fatalf("mkdir global: %v", err)
 	}
@@ -549,7 +565,7 @@ func TestRunHook_ExtraEnvIsPassed(t *testing.T) {
 		t.Fatalf("setup: %v", err)
 	}
 	log := filepath.Join(env.StorePath, "fired.log")
-	body := "#!/bin/sh\necho \"$SKM_REMOTE_HOST $SKM_REMOTE_PORT\" >> " + log + "\n"
+	body := "#!/bin/sh\necho \"$SKM_REMOTE_HOST $SKM_REMOTE_PORT\" >> " + filepath.ToSlash(log) + "\n"
 	dir := filepath.Join(env.StorePath, alias, HooksDir)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		t.Fatalf("mkdir: %v", err)
