@@ -68,12 +68,15 @@ func TestParsePath(t *testing.T) {
 	}
 
 	if path := ParsePath(target); path != target {
-		t.Error("path are not equal")
+		t.Errorf("expected %s, got %q", target, path)
 	}
 
 	// parse symbol link via a unique tmp path so re-runs don't collide
 	linkPath := filepath.Join(t.TempDir(), "passwd-link")
 	if err := os.Symlink(target, linkPath); err != nil {
+		if runtime.GOOS == "windows" {
+			t.Skipf("skipping symlink resolution test on Windows (symlink creation failed: %v)", err)
+		}
 		t.Fatalf("failed to create symbol link: %v", err)
 	}
 	if path := ParsePath(linkPath); path != target {
@@ -394,7 +397,7 @@ func writeHook(t *testing.T, path, logFile, extraExit string) {
 		t.Fatalf("mkdir hook dir: %v", err)
 	}
 	body := "#!/bin/sh\n" +
-		"printf '%s %s %s\\n' \"$SKM_EVENT\" \"$SKM_ALIAS\" \"$1\" >> " + filepath.ToSlash(logFile) + "\n" +
+		"printf '%s %s %s\\n' \"$SKM_EVENT\" \"$SKM_ALIAS\" \"$1\" >> '" + filepath.ToSlash(logFile) + "'\n" +
 		extraExit
 	if err := os.WriteFile(path, []byte(body), 0755); err != nil {
 		t.Fatalf("write hook: %v", err)
@@ -477,8 +480,8 @@ func TestRunHook_GlobalAndPerKeyBothFire(t *testing.T) {
 	logSlash := filepath.ToSlash(log)
 	// Global hook tags its line "G", per-key tags "K", so the ordering is
 	// observable in the log.
-	writeGlobal := "#!/bin/sh\necho G $SKM_EVENT $SKM_ALIAS >> " + logSlash + "\n"
-	writePerKey := "#!/bin/sh\necho K $SKM_EVENT $SKM_ALIAS >> " + logSlash + "\n"
+	writeGlobal := "#!/bin/sh\necho G $SKM_EVENT $SKM_ALIAS >> '" + logSlash + "'\n"
+	writePerKey := "#!/bin/sh\necho K $SKM_EVENT $SKM_ALIAS >> '" + logSlash + "'\n"
 	if err := os.MkdirAll(filepath.Join(env.StorePath, HooksDir), 0700); err != nil {
 		t.Fatalf("mkdir global: %v", err)
 	}
@@ -565,7 +568,7 @@ func TestRunHook_ExtraEnvIsPassed(t *testing.T) {
 		t.Fatalf("setup: %v", err)
 	}
 	log := filepath.Join(env.StorePath, "fired.log")
-	body := "#!/bin/sh\necho \"$SKM_REMOTE_HOST $SKM_REMOTE_PORT\" >> " + filepath.ToSlash(log) + "\n"
+	body := "#!/bin/sh\necho \"$SKM_REMOTE_HOST $SKM_REMOTE_PORT\" >> '" + filepath.ToSlash(log) + "'\n"
 	dir := filepath.Join(env.StorePath, alias, HooksDir)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		t.Fatalf("mkdir: %v", err)
