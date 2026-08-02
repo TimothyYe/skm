@@ -240,19 +240,19 @@ func TestBuildKeygenArgs_DefaultsAndShape(t *testing.T) {
 			name:      "ed25519 default — no -b",
 			params:    createParams{Alias: "tim", Type: "ed25519"},
 			storePath: "/store",
-			want:      []string{"-t", "ed25519", "-f", "/store/tim/id_ed25519"},
+			want:      []string{"-t", "ed25519", "-f", filepath.Join("/store", "tim", "id_ed25519")},
 		},
 		{
 			name:      "rsa with explicit bits and comment",
 			params:    createParams{Alias: "prod", Type: "rsa", Bits: 4096, Comment: "prod@laptop"},
 			storePath: "/store",
-			want:      []string{"-t", "rsa", "-f", "/store/prod/id_rsa", "-b", "4096", "-C", "prod@laptop"},
+			want:      []string{"-t", "rsa", "-f", filepath.Join("/store", "prod", "id_rsa"), "-b", "4096", "-C", "prod@laptop"},
 		},
 		{
 			name:      "ed25519-sk — no bits, filename matches registry",
 			params:    createParams{Alias: "yubi", Type: "ed25519-sk"},
 			storePath: "/store",
-			want:      []string{"-t", "ed25519-sk", "-f", "/store/yubi/id_ed25519_sk"},
+			want:      []string{"-t", "ed25519-sk", "-f", filepath.Join("/store", "yubi", "id_ed25519_sk")},
 		},
 	}
 	for _, tc := range cases {
