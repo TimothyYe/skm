@@ -839,3 +839,101 @@ func TestDelete_AllMissingNoop(t *testing.T) {
 		t.Errorf("untouched alias should survive: %v", err)
 	}
 }
+
+func chdir(t *testing.T, dir string) {
+	t.Helper()
+	prev, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(prev) })
+}
+
+func TestUse_SkmrcInCurrentDir(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+	seedKey(t, env, "work")
+	seedKey(t, env, "personal")
+
+	project := t.TempDir()
+	writeFile(t, filepath.Join(project, ".skmrc"), []byte("# client key\n\nwork\n"))
+	chdir(t, project)
+
+	if err := Use(newContextForArgs(t, env, nil)); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+	if got := activeAlias(t, env); got != "work" {
+		t.Errorf("active alias = %q, want %q", got, "work")
+	}
+}
+
+func TestUse_SkmrcFoundInParentDir(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+	seedKey(t, env, "work")
+
+	project := t.TempDir()
+	writeFile(t, filepath.Join(project, ".skmrc"), []byte("work\n"))
+	nested := filepath.Join(project, "a", "b")
+	if err := os.MkdirAll(nested, 0700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	chdir(t, nested)
+
+	if err := Use(newContextForArgs(t, env, nil)); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+	if got := activeAlias(t, env); got != "work" {
+		t.Errorf("active alias = %q, want %q", got, "work")
+	}
+}
+
+func TestUse_ExplicitAliasBeatsSkmrc(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+	seedKey(t, env, "work")
+	seedKey(t, env, "personal")
+
+	project := t.TempDir()
+	writeFile(t, filepath.Join(project, ".skmrc"), []byte("work\n"))
+	chdir(t, project)
+
+	if err := Use(newContextForArgs(t, env, []string{"personal"})); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+	if got := activeAlias(t, env); got != "personal" {
+		t.Errorf("active alias = %q, want %q", got, "personal")
+	}
+}
+
+func TestUse_SkmrcUnknownAliasNoop(t *testing.T) {
+	env := setupEnvironment(t)
+	defer tearDownEnvironment(t, env)
+	seedKey(t, env, "work")
+
+	project := t.TempDir()
+	writeFile(t, filepath.Join(project, ".skmrc"), []byte("missing\n"))
+	chdir(t, project)
+
+	if err := Use(newContextForArgs(t, env, nil)); err != nil {
+		t.Fatalf("Use: %v", err)
+	}
+	if got := activeAlias(t, env); got != "" {
+		t.Errorf("active alias = %q, want none", got)
+	}
+}
+
+func TestFindSkmrcAlias(t *testing.T) {
+	root := t.TempDir()
+	if _, ok := findSkmrcAlias(root); ok {
+		t.Fatal("found alias in a tree without .skmrc")
+	}
+	writeFile(t, filepath.Join(root, ".skmrc"), []byte("  \n# comment\n  dev  \nother\n"))
+	got, ok := findSkmrcAlias(root)
+	if !ok || got != "dev" {
+		t.Errorf("findSkmrcAlias = %q, %v; want dev, true", got, ok)
+	}
+}

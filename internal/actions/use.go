@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"os"
 	"sort"
 	"strings"
 
@@ -16,6 +17,8 @@ func Use(c *cli.Context) error {
 	var alias string
 	if c.NArg() > 0 {
 		alias = c.Args().Get(0)
+	} else if rcAlias, ok := skmrcAliasFromCwd(); ok {
+		alias = rcAlias
 	} else {
 		picked, err := pickKey("Please select one SSH key", keyMap)
 		if err != nil {
@@ -59,4 +62,12 @@ func Use(c *cli.Context) error {
 	_ = utils.RunHook(utils.EventPostUse, alias, env)
 	color.Green("Now using SSH key: [%s]", alias)
 	return nil
+}
+
+func skmrcAliasFromCwd() (string, bool) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", false
+	}
+	return findSkmrcAlias(cwd)
 }

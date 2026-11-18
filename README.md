@@ -193,6 +193,19 @@ skm ls -t ed25519      # filter by key type
 Now using SSH key: dev
 ```
 
+### Pick the key for a folder with `.skmrc`
+
+Put the alias in a `.skmrc` file in your project folder (blank lines and `#` comments are ignored):
+
+```bash
+% echo client-a > ~/work/client-a/.skmrc
+% cd ~/work/client-a
+% skm use
+Now using SSH key: [client-a]
+```
+
+`skm use` with no alias reads the nearest `.skmrc` in the current folder or its parents. An explicit `skm use <alias>` always wins, and with no `.skmrc` you get the prompt below. The switch is still global; to run it automatically on `cd`, call `skm use` from a shell hook (direnv, zsh `chpwd`).
+
 ### Prompt UI for key selection
 
 You can just type ```skm use```, then a prompt UI will help you to choose the right SSH key:
